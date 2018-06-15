@@ -42,10 +42,11 @@ div.dropzone {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
+    transition-duration: 50ms;
 }
 
 div.dropzone-hover {
-
+    background-color: white;
 }
 
 p.inner-text {
