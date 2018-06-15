@@ -1,0 +1,30 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+div.root {
+    width: 750px;
+    margin: 0 auto;
+}
+
+select#ad-acc-select {
+    width: 200px;
+}
+
+div.dropzone {
+    border: 1px solid black;
+    width: 100%;
+    height: 400px;
+}
+
+div.dropzone-hover {
+
+}
+
+p.inner-text {
+    margin: 100px auto 0 auto;
+    width: 100%;
+    text-align: center;
+}
