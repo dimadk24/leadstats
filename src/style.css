@@ -51,4 +51,5 @@ div.dropzone-hover {
 
 p.inner-text {
     color: black;
+    pointer-events: none;
 }
