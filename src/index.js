@@ -11,7 +11,6 @@ function onLoad() {
 function initSelect() {
     const select = $('select#ad-acc-select');
     select.select2({placeholder: "Выбрать", language: "ru"});
-    load_select_data();
     select.on('select2:select', (e) => {
         ad_cabinet_id = e.params.data.id;
         work();
