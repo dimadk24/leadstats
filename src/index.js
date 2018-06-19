@@ -32,7 +32,7 @@ function addLoadedData(array) {
         for (let item of array) {
             // noinspection JSUnresolvedVariable
             if (item.account_status &&
-                (item.access_role == 'admin' || item.access_role == 'manager')) {
+                (item.access_role === 'admin' || item.access_role === 'manager')) {
                 // noinspection JSUnresolvedVariable
                 select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
             }
