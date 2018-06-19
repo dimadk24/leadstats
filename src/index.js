@@ -83,20 +83,24 @@ function readFile(file) {
     reader.readAsText(file)
 }
 
-function safe_get_file(dataTransfer) {
-    const files = dataTransfer.files;
-    let error = '';
+function check_files(files) {
     if (!files.length) {
-        error = 'Перетащи файл';
+        return 'Перетащи файл';
     }
     if (!files[0].name.endsWith('.csv')) {
-        error = 'Неверный файл!\nУ него расширение не .csv';
+        return 'Неверный файл!\nУ него расширение не .csv';
     }
-    if (error) {
+    return '';
+}
+
+function safe_get_file(dataTransfer) {
+    const files = dataTransfer.files;
+    const error = check_files(files);
+    if (error){
         alert(error);
         throw new Error(error);
     }
-    return files[0]
+    return files[0];
 }
 
 function onDrop(e) {
