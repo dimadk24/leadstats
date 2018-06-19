@@ -29,6 +29,9 @@ function loadSelectData() {
         $('option#placeholder').remove();
         for (let account of accounts) {
             // noinspection JSUnresolvedVariable
+            if (account.account_status &&
+                (account.access_role == 'admin' || account.access_role == 'manager'))
+            // noinspection JSUnresolvedVariable
             $('select#ad-acc-select')
                 .append(`<option value="${account.account_id}">${account.account_name}</option>`);
         }
