@@ -30,10 +30,11 @@ function loadSelectData() {
         for (let account of accounts) {
             // noinspection JSUnresolvedVariable
             if (account.account_status &&
-                (account.access_role == 'admin' || account.access_role == 'manager'))
-            // noinspection JSUnresolvedVariable
-            $('select#ad-acc-select')
-                .append(`<option value="${account.account_id}">${account.account_name}</option>`);
+                (account.access_role == 'admin' || account.access_role == 'manager')) {
+                // noinspection JSUnresolvedVariable
+                $('select#ad-acc-select')
+                    .append(`<option value="${account.account_id}">${account.account_name}</option>`);
+            }
         }
     });
 }
@@ -84,19 +85,15 @@ function readFile(file) {
 }
 
 function check_files(files) {
-    if (!files.length) {
-        return 'Перетащи файл';
-    }
-    if (!files[0].name.endsWith('.csv')) {
-        return 'Неверный файл!\nУ него расширение не .csv';
-    }
-    return '';
+    return !file.length ? 'Перетащи файл'
+        : !files[0].name.endsWith('.csv') ? 'Неверный файл!\nУ него расширение не .csv'
+            : '';
 }
 
 function safe_get_file(dataTransfer) {
     const files = dataTransfer.files;
     const error = check_files(files);
-    if (error){
+    if (error) {
         alert(error);
         throw new Error(error);
     }
