@@ -24,19 +24,23 @@ function onLoad() {
     initDropzone();
 }
 
+function addItemsToSelect(array, select) {
+    for (let item of array) {
+        // noinspection JSUnresolvedVariable
+        if (item.account_status &&
+            (item.access_role === 'admin' || item.access_role === 'manager')) {
+            // noinspection JSUnresolvedVariable
+            select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
+        }
+    }
+}
+
 function addLoadedData(array) {
     const select = $('select#ad-acc-select');
     if (array.length === 0) {
         select.append(`<option value="0">У тебя нет рекламных кабинетов :(</option>`);
     } else
-        for (let item of array) {
-            // noinspection JSUnresolvedVariable
-            if (item.account_status &&
-                (item.access_role === 'admin' || item.access_role === 'manager')) {
-                // noinspection JSUnresolvedVariable
-                select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
-            }
-        }
+        addItemsToSelect(array, select);
 }
 
 function loadSelectData() {
