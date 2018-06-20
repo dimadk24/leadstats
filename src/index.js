@@ -91,7 +91,7 @@ function readFile(file) {
         file_content = e.target.result;
         work();
     };
-    reader.readAsText(file)
+    reader.readAsText(file, 'cp1251')
 }
 
 function check_files(files) {
