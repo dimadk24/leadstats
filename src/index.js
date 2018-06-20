@@ -95,7 +95,7 @@ function readFile(file) {
 }
 
 function check_files(files) {
-    return !file.length ? 'Перетащи файл'
+    return !files.length ? 'Перетащи файл'
         : !files[0].name.endsWith('.csv') ? 'Неверный файл!\nУ него расширение не .csv'
             : '';
 }
