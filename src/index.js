@@ -1,21 +1,26 @@
 import CSV from 'comma-separated-values/csv';
+import catta from 'catta';
 
-// https://oauth.vk.com/authorize?client_id=6604233&redirect_uri=https://oauth.vk.com/blank.html&display=page&scope=ads,offline&response_type=token&v=5.80
-const access_token = '6394fa6452639c9cda1e7ba29814dd0d87eee20a70f90be286b8008fa1eaf789f42f0bea6a79c4fd692b5';
 const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
+let campaigns = [];
 
-function vk(method, data, callback) {
+function vk(options) {
+    let data = options.data || {};
     data.access_token = access_token;
     data.version = api_version;
-    $.ajax(api_url + method, {
-        method: 'POST',
-        dataType: 'jsonp',
-        data: data,
-        success: data => callback(data.response)
+    // noinspection JSUnresolvedFunction
+    return new Promise((resolve, reject) => catta({
+        type: 'jsonp', timeout: 2,
+        url: api_url + options.method, data: data,
     })
+        .then(res => resolve(res.response))
+        .catch(err => {
+            console.log(err);
+            reject(err);
+        }));
 }
 
 
@@ -43,10 +48,10 @@ function addLoadedData(array) {
 }
 
 function loadSelectData() {
-    vk('ads.getAccounts', {}, function (accounts) {
+    vk({method: 'ads.getAccounts'}).then(accounts => {
         $('option#placeholder').remove();
         addLoadedData(accounts);
-    });
+    }, err => console.error(err));
 }
 
 function initSelect() {
@@ -74,10 +79,31 @@ function dragOver(e) {
     e.preventDefault();
 }
 
+function handleRecord(record) {
+    console.log(record);
+}
+
+function load_campaigns() {
+    return new Promise((resolse, reject) => vk({
+        method: 'ads.getCampaigns',
+        data: {account_id: ad_cabinet_id, include_deleted: 0}
+    }).then(campaign_array => {
+        for (let campaign of campaign_array) {
+            campaigns.push({id: campaign.id, name: campaign.name})
+        }
+        resolse(campaigns);
+    }));
+}
+
+function shit(csv, campaigns) {
+    console.log(campaigns);
+    csv.forEach(handleRecord);
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
-        let csv = new CSV(remove_header(file_content), {'header': true});
-        console.log(csv.parse());
+        let csv = new CSV(remove_header(file_content), {header: true, cast: false});
+        load_campaigns().then(campaigns => shit(csv.parse(), campaigns));
     }
 }
 
