@@ -49,6 +49,10 @@ div.dropzone-hover {
     background-color: white;
 }
 
+div.dropzone-dropped {
+    background-color: lightgreen;
+}
+
 p.inner-text {
     color: black;
     pointer-events: none;

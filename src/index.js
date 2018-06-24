@@ -149,9 +149,16 @@ function safe_get_file(dataTransfer) {
     return files[0];
 }
 
+function changeStyles() {
+    const dropzone = $('#dropzone');
+    dropzone.removeClass('dropzone-hover');
+    dropzone.addClass('dropzone-dropped');
+}
+
 function onDrop(e) {
     e.stopPropagation();
     e.preventDefault();
+    changeStyles();
     readFile(safe_get_file(e.dataTransfer));
 }
 
