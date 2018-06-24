@@ -5,6 +5,7 @@ const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
+let campaign_ids = [];
 let campaigns = [];
 
 function vk(options) {
@@ -31,9 +32,7 @@ function onLoad() {
 
 function addItemsToSelect(array, select) {
     for (let item of array) {
-        // noinspection JSUnresolvedVariable
         if (item.account_status && ['admin', 'manager'].includes(item.access_role)) {
-            // noinspection JSUnresolvedVariable
             select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
         }
     }
@@ -79,8 +78,21 @@ function dragOver(e) {
     e.preventDefault();
 }
 
+function mergeCampaignAndUtm(utm, campaign_name, campaign_id) {
+    if (campaign_name.includes(utm)) {
+        campaigns.push({'id': campaign_id, 'name': campaign_name, 'utm': utm});
+    }
+}
+
+function removeShit(str) {
+    return str.includes('&') ? str.split('&', 1)[0] : str;
+}
+
 function handleRecord(record) {
-    console.log(record);
+    const utm_1 = removeShit(record.utm_1);
+    for (let campaign of campaign_ids) {
+        mergeCampaignAndUtm(utm_1, campaign.name, campaign.id);
+    }
 }
 
 function load_campaigns() {
@@ -89,21 +101,22 @@ function load_campaigns() {
         data: {account_id: ad_cabinet_id, include_deleted: 0}
     }).then(campaign_array => {
         for (let campaign of campaign_array) {
-            campaigns.push({id: campaign.id, name: campaign.name})
+            campaign_ids.push({id: campaign.id, name: campaign.name})
         }
-        resolse(campaigns);
+        resolse(campaign_ids);
     }));
 }
 
-function shit(csv, campaigns) {
+function mergeCampaigns(csv, campaigns) {
     console.log(campaigns);
     csv.forEach(handleRecord);
+    console.log(campaigns);
 }
 
 function work() {
     if (ad_cabinet_id && file_content) {
         let csv = new CSV(remove_header(file_content), {header: true, cast: false});
-        load_campaigns().then(campaigns => shit(csv.parse(), campaigns));
+        load_campaigns().then(campaigns => mergeCampaigns(csv.parse(), campaigns));
     }
 }
 
@@ -139,7 +152,6 @@ function safe_get_file(dataTransfer) {
 function onDrop(e) {
     e.stopPropagation();
     e.preventDefault();
-    // noinspection JSUnresolvedVariable
     readFile(safe_get_file(e.dataTransfer));
 }
 
