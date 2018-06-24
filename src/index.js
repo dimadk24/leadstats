@@ -5,7 +5,6 @@ const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
-let campaign_ids = [];
 let campaigns = [];
 
 function vk(options) {
@@ -88,7 +87,7 @@ function removeShit(str) {
     return str.includes('&') ? str.split('&', 1)[0] : str;
 }
 
-function handleRecord(record) {
+function handleRecord(record, campaign_ids) {
     const utm_1 = removeShit(record.utm_1);
     for (let campaign of campaign_ids) {
         mergeCampaignAndUtm(utm_1, campaign.name, campaign.id);
@@ -100,6 +99,7 @@ function load_campaigns() {
         method: 'ads.getCampaigns',
         data: {account_id: ad_cabinet_id, include_deleted: 0}
     }).then(campaign_array => {
+        let campaign_ids = [];
         for (let campaign of campaign_array) {
             campaign_ids.push({id: campaign.id, name: campaign.name})
         }
@@ -107,15 +107,15 @@ function load_campaigns() {
     }));
 }
 
-function mergeCampaigns(csv) {
-    csv.forEach(handleRecord);
+function mergeCampaigns(csv, campaign_ids) {
+    csv.forEach(record => handleRecord(record, campaign_ids));
     console.log(campaigns);
 }
 
 function work() {
     if (ad_cabinet_id && file_content) {
         let csv = new CSV(remove_header(file_content), {header: true, cast: false});
-        load_campaigns().then(campaign_ids => mergeCampaigns(csv.parse()));
+        load_campaigns().then(campaign_ids => mergeCampaigns(csv.parse(), campaign_ids));
     }
 }
 
