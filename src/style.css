@@ -42,7 +42,7 @@ div.dropzone {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
-    transition-duration: 50ms;
+    transition-duration: 150ms;
 }
 
 div.dropzone-hover {
