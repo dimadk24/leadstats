@@ -107,8 +107,8 @@ function load_campaigns() {
     }));
 }
 
-function mergeCampaigns(csv, campaigns) {
-    console.log(campaigns);
+function mergeCampaigns(csv, campaign_ids) {
+    console.log(campaign_ids);
     csv.forEach(handleRecord);
     console.log(campaigns);
 }
@@ -116,7 +116,7 @@ function mergeCampaigns(csv, campaigns) {
 function work() {
     if (ad_cabinet_id && file_content) {
         let csv = new CSV(remove_header(file_content), {header: true, cast: false});
-        load_campaigns().then(campaigns => mergeCampaigns(csv.parse(), campaigns));
+        load_campaigns().then(campaign_ids => mergeCampaigns(csv.parse(), campaign_ids));
     }
 }
 
