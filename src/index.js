@@ -6,6 +6,7 @@ const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
 let campaigns = [];
+let csv_data = [];
 
 function vk(options) {
     let data = options.data || {};
@@ -87,11 +88,12 @@ function removeShit(str) {
     return str.includes('&') ? str.split('&', 1)[0] : str;
 }
 
-function handleRecord(record, campaign_ids) {
-    const utm_1 = removeShit(record.utm_1);
-    for (let campaign of campaign_ids) {
-        mergeCampaignAndUtm(utm_1, campaign.name, campaign.id);
+function convertVkCampaigns(campaign_array) {
+    let campaign_ids = [];
+    for (let campaign of campaign_array) {
+        campaign_ids.push({id: campaign.id, name: campaign.name})
     }
+    return campaign_ids;
 }
 
 function load_campaigns() {
@@ -99,23 +101,94 @@ function load_campaigns() {
         method: 'ads.getCampaigns',
         data: {account_id: ad_cabinet_id, include_deleted: 0}
     }).then(campaign_array => {
-        let campaign_ids = [];
-        for (let campaign of campaign_array) {
-            campaign_ids.push({id: campaign.id, name: campaign.name})
-        }
-        resolse(campaign_ids);
+        resolse(convertVkCampaigns(campaign_array));
     }));
 }
 
-function mergeCampaigns(csv, campaign_ids) {
-    csv.forEach(record => handleRecord(record, campaign_ids));
-    console.log(campaigns);
+function mergeCampaigns(campaign_ids) {
+    for (let record of csv_data) {
+        for (let campaign of campaign_ids) {
+            mergeCampaignAndUtm(record.utm_1, campaign.name, campaign.id);
+        }
+    }
+    return campaigns;
+}
+
+function get_campaigns_id(campaigns) {
+    let ids = [];
+    for (let campaign of campaigns) {
+        ids.push(campaign.id);
+    }
+    return ids;
+}
+
+function convertVkAd(ad) {
+    return {name: ad.name, id: ad.id};
+}
+
+function mergeAdsAndCampaigns(ads, campaigns) {
+    for (let campaign of campaigns) {
+        campaign.ads = [];
+        for (let ad of ads)
+            if (ad.campaign_id === campaign.id)
+                campaign.ads.push(convertVkAd(ad));
+    }
+    return campaigns;
+}
+
+function getAds(campaigns) {
+    const ids = get_campaigns_id(campaigns);
+    return vk({
+        method: 'ads.getAds',
+        data: {
+            account_id: ad_cabinet_id,
+            include_deleted: 0,
+            campaign_ids: JSON.stringify(ids)
+        }
+    });
+}
+
+function mergeAdsAndUtm(csv_record, campaigns) {
+    let ad_utm = csv_record.utm_1 + csv_record.utm_2;
+    for (let campaign of campaigns) {
+        let new_ads = [];
+        for (let ad of campaign.ads) {
+            if (ad.name.includes(ad_utm)) {
+                ad.utm = ad_utm;
+            }
+            new_ads.push(ad);
+        }
+        campaign.ads = new_ads;
+    }
+}
+
+function mergeCampaignsAdsAndUtm(campaigns) {
+    for (let record of csv_data) {
+        mergeAdsAndUtm(record, campaigns);
+    }
+    return campaigns;
+}
+
+function changeRecord(obj) {
+    obj.utm_1 = removeShit(obj.utm_1);
+    obj.utm_1 = obj.utm_1.replace(/^\D+/g, '');
+    return obj;
 }
 
 function work() {
     if (ad_cabinet_id && file_content) {
-        let csv = new CSV(remove_header(file_content), {header: true, cast: false});
-        load_campaigns().then(campaign_ids => mergeCampaigns(csv.parse(), campaign_ids));
+        // noinspection JSUnresolvedFunction
+        const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
+        csv.forEach(record => csv_data.push(changeRecord(record)));
+        load_campaigns().then(campaign_ids => {
+            let campaigns = mergeCampaigns(campaign_ids);
+            getAds(campaigns)
+                .then(ads => {
+                    campaigns = mergeAdsAndCampaigns(ads, campaigns);
+                    campaigns = mergeCampaignsAdsAndUtm(campaigns);
+                    console.log(campaigns);
+                });
+        });
     }
 }
 
