@@ -7,21 +7,32 @@ let ad_cabinet_id = 0;
 let file_content = '';
 let campaigns = [];
 let csv_data = [];
+let request_time = 0;
 
 function vk(options) {
     let data = options.data || {};
     data.access_token = access_token;
     data.version = api_version;
-    // noinspection JSUnresolvedFunction
-    return new Promise((resolve, reject) => catta({
-        type: 'jsonp', timeout: 2,
-        url: api_url + options.method, data: data,
-    })
-        .then(res => resolve(res.response))
-        .catch(err => {
-            console.log(err);
-            reject(err);
-        }));
+    return new Promise((resolve, reject) => {
+        const now = Date.now();
+        const difference = now - request_time;
+        if (request_time && difference < 500) setTimeout(request, difference);
+        else request();
+
+        function request() {
+            request_time = now;
+            // noinspection JSUnresolvedFunction
+            catta({
+                type: 'jsonp', timeout: 2,
+                url: api_url + options.method, data: data,
+            })
+                .then(res => resolve(res.response))
+                .catch(err => {
+                    console.log(err);
+                    reject(err);
+                })
+        }
+    });
 }
 
 
