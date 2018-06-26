@@ -147,14 +147,12 @@ function mergeAdsAndCampaigns(ads, campaigns) {
     return campaigns;
 }
 
-function getAds(campaigns) {
-    const ids = get_campaigns_id(campaigns);
+function getAds() {
     return vk({
         method: 'ads.getAds',
         data: {
             account_id: ad_cabinet_id,
             include_deleted: 0,
-            campaign_ids: JSON.stringify(ids)
         }
     });
 }
@@ -217,8 +215,14 @@ function getAdsStats(ads) {
     });
 }
 
-function getAdsIds(ads) {
-    return ads.map(ad => ad.id);
+function getAdIds() {
+    let ids = new Set();
+    for (let record of csv_data) {
+        for (let ad of record.ads) {
+            ids.add(ad)
+        }
+    }
+    return [...ids];
 }
 
 function mergeAdsAndStats(ads, stats) {
@@ -241,25 +245,46 @@ function parseCsv() {
     // noinspection JSUnresolvedFunction
     const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
     csv.forEach(addToCsvData);
-    console.log(csv_data);
+}
+
+function addAdNamesToData(ads) {
+    for (let record of csv_data) {
+        record.ads = [];
+        for (let ad of ads) {
+            if (ad.name.includes(record.str_utm))
+                record.ads.push(parseInt(ad.id));
+        }
+    }
+}
+
+function addSpentsToData(vk_stats) {
+    for (let record of csv_data) {
+        record.spent = 0.0;
+        for (let ad_stats of vk_stats) {
+            if (record.ads.includes(ad_stats.id))
+                record.spent += parseFloat(ad_stats.stats[0].spent);
+        }
+    }
+}
+
+function removeAdsFromData() {
+    for (let record of csv_data) {
+        record.ads = undefined;
+    }
 }
 
 function work() {
     if (ad_cabinet_id && file_content) {
         parseCsv();
-        load_campaigns().then(campaign_ids => {
-            let campaigns = mergeCampaigns(campaign_ids);
-            getAds(campaigns)
-                .then(vk_ads => {
-                    campaigns = mergeAdsAndCampaigns(vk_ads, campaigns);
-                    campaigns = mergeCampaignsAdsAndUtm(campaigns);
-                    let ads = convertCampaignsToAds(campaigns);
-                    getAdsStats(getAdsIds(ads)).then(res => {
-                        ads = mergeAdsAndStats(ads, res);
-                        console.log(ads)
-                    });
+        getAds()
+            .then(vk_ads => {
+                addAdNamesToData(vk_ads);
+                getAdsStats(getAdIds()).then(res => {
+                    addSpentsToData(res);
+                    removeAdsFromData();
+                    console.log(csv_data);
                 });
-        });
+            });
     }
 }
 
