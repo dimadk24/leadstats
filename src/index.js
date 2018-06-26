@@ -26,7 +26,7 @@ function vk(options) {
                 type: 'jsonp', timeout: 2,
                 url: api_url + options.method, data: data,
             })
-                .then(res => resolve(res.response))
+                .then(res => res.response ? resolve(res.response) : reject(res))
                 .catch(err => {
                     console.log(err);
                     reject(err);
@@ -184,10 +184,13 @@ function mergeCampaignsAdsAndUtm(campaigns) {
     return campaigns;
 }
 
-function changeRecord(obj) {
-    obj.utm_1 = removeShit(obj.utm_1);
-    obj.utm_1 = obj.utm_1.replace(/^\D+/g, '');
-    return obj;
+function convertRecord(obj) {
+    let new_obj = {};
+    new_obj.utm_1 = removeShit(obj.utm_1).replace(/^\D+/g, '');
+    new_obj.utm_2 = obj.utm_2;
+    new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2;
+    new_obj.count = 1;
+    return new_obj;
 }
 
 function convertCampaignsToAds(campaigns) {
@@ -228,11 +231,22 @@ function mergeAdsAndStats(ads, stats) {
     return ads;
 }
 
+function addToCsvData(record) {
+    record = convertRecord(record);
+    const found_record = csv_data.find(item => item.str_utm === record.str_utm);
+    found_record ? found_record.count++ : csv_data.push(record);
+}
+
+function parseCsv() {
+    // noinspection JSUnresolvedFunction
+    const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
+    csv.forEach(addToCsvData);
+    console.log(csv_data);
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
-        // noinspection JSUnresolvedFunction
-        const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
-        csv.forEach(record => csv_data.push(changeRecord(record)));
+        parseCsv();
         load_campaigns().then(campaign_ids => {
             let campaigns = mergeCampaigns(campaign_ids);
             getAds(campaigns)
