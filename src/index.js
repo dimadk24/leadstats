@@ -149,12 +149,16 @@ function getAds(campaigns) {
 }
 
 function mergeAdsAndUtm(csv_record, campaigns) {
-    let ad_utm = csv_record.utm_1 + csv_record.utm_2;
+    const utm_1 = csv_record.utm_1;
+    const utm_2 = csv_record.utm_2;
+    let ad_utm = utm_1 + utm_2;
     for (let campaign of campaigns) {
         let new_ads = [];
         for (let ad of campaign.ads) {
             if (ad.name.includes(ad_utm)) {
-                ad.utm = ad_utm;
+                ad.text_utm = ad_utm;
+                ad.utm_1 = utm_1;
+                ad.utm_2 = utm_2;
             }
             new_ads.push(ad);
         }
@@ -175,6 +179,16 @@ function changeRecord(obj) {
     return obj;
 }
 
+function convertCampaignsToAds(campaigns) {
+    let ads = [];
+    for (let campaign of campaigns) {
+        for (let ad of campaign.ads) {
+            ads.push(ad);
+        }
+    }
+    return ads;
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
         // noinspection JSUnresolvedFunction
@@ -183,10 +197,11 @@ function work() {
         load_campaigns().then(campaign_ids => {
             let campaigns = mergeCampaigns(campaign_ids);
             getAds(campaigns)
-                .then(ads => {
-                    campaigns = mergeAdsAndCampaigns(ads, campaigns);
+                .then(vk_ads => {
+                    campaigns = mergeAdsAndCampaigns(vk_ads, campaigns);
                     campaigns = mergeCampaignsAdsAndUtm(campaigns);
-                    console.log(campaigns);
+                    let ads = convertCampaignsToAds(campaigns);
+                    console.log(ads);
                 });
         });
     }
