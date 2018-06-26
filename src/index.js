@@ -123,7 +123,7 @@ function get_campaigns_id(campaigns) {
 }
 
 function convertVkAd(ad) {
-    return {name: ad.name, id: ad.id};
+    return {name: ad.name, id: parseInt(ad.id)};
 }
 
 function mergeAdsAndCampaigns(ads, campaigns) {
@@ -189,6 +189,34 @@ function convertCampaignsToAds(campaigns) {
     return ads;
 }
 
+function getAdsStats(ads) {
+    return vk({
+        method: 'ads.getStatistics',
+        data: {
+            account_id: ad_cabinet_id,
+            ids_type: 'ad',
+            ids: JSON.stringify(ads),
+            period: 'overall',
+            date_from: 0,
+            date_to: 0,
+        }
+    });
+}
+
+function getAdsIds(ads) {
+    return ads.map(ad => ad.id);
+}
+
+function mergeAdsAndStats(ads, stats) {
+    for (let ad of ads) {
+        for (let obj of stats) {
+            ad.spent = obj.id !== ad.id ? ad.spent :
+                obj.stats.length ? parseFloat(obj.stats[0].spent) : 0;
+        }
+    }
+    return ads;
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
         // noinspection JSUnresolvedFunction
@@ -201,7 +229,10 @@ function work() {
                     campaigns = mergeAdsAndCampaigns(vk_ads, campaigns);
                     campaigns = mergeCampaignsAdsAndUtm(campaigns);
                     let ads = convertCampaignsToAds(campaigns);
-                    console.log(ads);
+                    getAdsStats(getAdsIds(ads)).then(res => {
+                        ads = mergeAdsAndStats(ads, res);
+                        console.log(ads)
+                    });
                 });
         });
     }
