@@ -5,7 +5,7 @@ const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
-let csv_data = [];
+let data = [];
 let request_time = 0;
 
 function vk(options) {
@@ -126,7 +126,7 @@ function getAdsStats(ads) {
 
 function getAdIds() {
     let ids = new Set();
-    for (let record of csv_data) {
+    for (let record of data) {
         for (let ad of record.ads) {
             ids.add(ad)
         }
@@ -134,20 +134,20 @@ function getAdIds() {
     return [...ids];
 }
 
-function addToCsvData(record) {
+function addToData(record) {
     record = convertRecord(record);
-    const found_record = csv_data.find(item => item.str_utm === record.str_utm);
-    found_record ? found_record.count++ : csv_data.push(record);
+    const found_record = data.find(item => item.str_utm === record.str_utm);
+    found_record ? found_record.count++ : data.push(record);
 }
 
 function parseCsv() {
     // noinspection JSUnresolvedFunction
     const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
-    csv.forEach(addToCsvData);
+    csv.forEach(addToData);
 }
 
 function addAdNamesToData(ads) {
-    for (let record of csv_data) {
+    for (let record of data) {
         record.ads = [];
         for (let ad of ads) {
             if (ad.name.includes(record.str_utm))
@@ -157,7 +157,7 @@ function addAdNamesToData(ads) {
 }
 
 function addSpentsToData(vk_stats) {
-    for (let record of csv_data) {
+    for (let record of data) {
         record.spent = 0.0;
         for (let ad_stats of vk_stats) {
             if (record.ads.includes(ad_stats.id))
@@ -167,13 +167,13 @@ function addSpentsToData(vk_stats) {
 }
 
 function removeAdsFromData() {
-    for (let record of csv_data) {
+    for (let record of data) {
         record.ads = undefined;
     }
 }
 
 function addCplToData() {
-    csv_data = csv_data.map(record => {
+    data = data.map(record => {
         record.cpl = +(record.spent / record.count).toFixed(2);
         return record
     });
@@ -189,7 +189,7 @@ function work() {
                     addSpentsToData(res);
                     removeAdsFromData();
                     addCplToData();
-                    console.log(csv_data);
+                    console.log(data);
                 });
             });
     }
