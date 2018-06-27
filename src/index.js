@@ -193,8 +193,17 @@ function addLoader(elem) {
 
 function showLoader() {
     const content = $('div.content');
-    content.empty();
-    addLoader(content);
+    // noinspection JSValidateTypes
+    content.children().fadeOut(400, () => {
+        content.empty();
+        addLoader(content);
+    });
+}
+
+function removeLoader() {
+    const content = $('div.content');
+    // noinspection JSValidateTypes
+    content.children().fadeOut(600, () => content.empty());
 }
 
 function work() {
@@ -208,6 +217,7 @@ function work() {
                     addSpentsToData(res);
                     removeAdsFromData();
                     addCplToData();
+                    removeLoader();
                     console.log(data);
                 });
             });
