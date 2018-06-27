@@ -172,6 +172,13 @@ function removeAdsFromData() {
     }
 }
 
+function addCplToData() {
+    csv_data = csv_data.map(record => {
+        record.cpl = +(record.spent / record.count).toFixed(2);
+        return record
+    });
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
         parseCsv();
@@ -181,6 +188,7 @@ function work() {
                 getAdsStats(getAdIds()).then(res => {
                     addSpentsToData(res);
                     removeAdsFromData();
+                    addCplToData();
                     console.log(csv_data);
                 });
             });
