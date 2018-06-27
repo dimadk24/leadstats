@@ -179,8 +179,27 @@ function addCplToData() {
     });
 }
 
+function addLoader(elem) {
+    let wrapper = $('<div class="loading"></div>');
+    let loading = $('<div class="sk-circle"></div>');
+    let inner_html = '';
+    for (let i = 1; i <= 12; i++) {
+        inner_html += '<div class="sk-circle' + i.toString() + ' sk-child"></div>'
+    }
+    loading.html(inner_html);
+    wrapper.html(loading);
+    elem.html(wrapper);
+}
+
+function showLoader() {
+    const content = $('div.content');
+    content.empty();
+    addLoader(content);
+}
+
 function work() {
     if (ad_cabinet_id && file_content) {
+        showLoader();
         parseCsv();
         getAds()
             .then(vk_ads => {
