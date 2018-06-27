@@ -5,7 +5,6 @@ const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
-let campaigns = [];
 let csv_data = [];
 let request_time = 0;
 
@@ -89,62 +88,8 @@ function dragOver(e) {
     e.preventDefault();
 }
 
-function mergeCampaignAndUtm(utm, campaign_name, campaign_id) {
-    if (campaign_name.includes(utm)) {
-        campaigns.push({'id': campaign_id, 'name': campaign_name, 'utm': utm});
-    }
-}
-
 function removeShit(str) {
     return str.includes('&') ? str.split('&', 1)[0] : str;
-}
-
-function convertVkCampaigns(campaign_array) {
-    let campaign_ids = [];
-    for (let campaign of campaign_array) {
-        campaign_ids.push({id: campaign.id, name: campaign.name})
-    }
-    return campaign_ids;
-}
-
-function load_campaigns() {
-    return new Promise((resolse, reject) => vk({
-        method: 'ads.getCampaigns',
-        data: {account_id: ad_cabinet_id, include_deleted: 0}
-    }).then(campaign_array => {
-        resolse(convertVkCampaigns(campaign_array));
-    }));
-}
-
-function mergeCampaigns(campaign_ids) {
-    for (let record of csv_data) {
-        for (let campaign of campaign_ids) {
-            mergeCampaignAndUtm(record.utm_1, campaign.name, campaign.id);
-        }
-    }
-    return campaigns;
-}
-
-function get_campaigns_id(campaigns) {
-    let ids = [];
-    for (let campaign of campaigns) {
-        ids.push(campaign.id);
-    }
-    return ids;
-}
-
-function convertVkAd(ad) {
-    return {name: ad.name, id: parseInt(ad.id)};
-}
-
-function mergeAdsAndCampaigns(ads, campaigns) {
-    for (let campaign of campaigns) {
-        campaign.ads = [];
-        for (let ad of ads)
-            if (ad.campaign_id === campaign.id)
-                campaign.ads.push(convertVkAd(ad));
-    }
-    return campaigns;
 }
 
 function getAds() {
@@ -157,31 +102,6 @@ function getAds() {
     });
 }
 
-function mergeAdsAndUtm(csv_record, campaigns) {
-    const utm_1 = csv_record.utm_1;
-    const utm_2 = csv_record.utm_2;
-    let ad_utm = utm_1 + utm_2;
-    for (let campaign of campaigns) {
-        let new_ads = [];
-        for (let ad of campaign.ads) {
-            if (ad.name.includes(ad_utm)) {
-                ad.text_utm = ad_utm;
-                ad.utm_1 = utm_1;
-                ad.utm_2 = utm_2;
-            }
-            new_ads.push(ad);
-        }
-        campaign.ads = new_ads;
-    }
-}
-
-function mergeCampaignsAdsAndUtm(campaigns) {
-    for (let record of csv_data) {
-        mergeAdsAndUtm(record, campaigns);
-    }
-    return campaigns;
-}
-
 function convertRecord(obj) {
     let new_obj = {};
     new_obj.utm_1 = removeShit(obj.utm_1).replace(/^\D+/g, '');
@@ -189,16 +109,6 @@ function convertRecord(obj) {
     new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2;
     new_obj.count = 1;
     return new_obj;
-}
-
-function convertCampaignsToAds(campaigns) {
-    let ads = [];
-    for (let campaign of campaigns) {
-        for (let ad of campaign.ads) {
-            ads.push(ad);
-        }
-    }
-    return ads;
 }
 
 function getAdsStats(ads) {
@@ -223,16 +133,6 @@ function getAdIds() {
         }
     }
     return [...ids];
-}
-
-function mergeAdsAndStats(ads, stats) {
-    for (let ad of ads) {
-        for (let obj of stats) {
-            ad.spent = obj.id !== ad.id ? ad.spent :
-                obj.stats.length ? parseFloat(obj.stats[0].spent) : 0;
-        }
-    }
-    return ads;
 }
 
 function addToCsvData(record) {
