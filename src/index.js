@@ -40,20 +40,19 @@ function onLoad() {
     initDropzone();
 }
 
-function addItemsToSelect(array, select) {
-    for (let item of array) {
-        if (item.account_status && ['admin', 'manager'].includes(item.access_role)) {
+function addCabinetsToSelect(array, select) {
+    if (array.length === 0)
+        select.append('<option value="0">У тебя нет активных рекламных кабинетов :(</option>');
+    else
+        for (let item of array)
             select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
-        }
-    }
 }
 
 function addLoadedData(array) {
-    const select = $('select#ad-acc-select');
-    if (array.length === 0) {
-        select.append(`<option value="0">У тебя нет рекламных кабинетов :(</option>`);
-    } else
-        addItemsToSelect(array, select);
+    array = array.filter(item =>
+        item.account_status && ['admin', 'manager'].includes(item.access_role)
+    );
+    addCabinetsToSelect(array, $('select#ad-acc-select'));
 }
 
 function loadSelectData() {
