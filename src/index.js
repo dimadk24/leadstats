@@ -1,5 +1,6 @@
 import CSV from 'comma-separated-values/csv';
 import catta from 'catta';
+import swal from 'sweetalert';
 
 const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
@@ -70,21 +71,6 @@ function initSelect() {
         ad_cabinet_id = e.params.data.id;
         work();
     });
-}
-
-const dropzone_hover_class = 'dropzone-hover';
-
-function onDragEnter() {
-    this.classList.add(dropzone_hover_class);
-}
-
-function onDragLeave() {
-    this.classList.remove(dropzone_hover_class);
-}
-
-function dragOver(e) {
-    e.stopPropagation();
-    e.preventDefault();
 }
 
 function removeShit(str) {
@@ -192,18 +178,18 @@ function addLoader(elem) {
 }
 
 function showLoader() {
-    const content = $('div.content');
+    const main = $('main');
     // noinspection JSValidateTypes
-    content.children().fadeOut(400, () => {
-        content.empty();
-        addLoader(content);
+    main.children().fadeOut(400, () => {
+        main.empty();
+        addLoader(main);
     });
 }
 
 function removeLoader() {
-    const content = $('div.content');
+    const main = $('main');
     // noinspection JSValidateTypes
-    content.children().fadeOut(600, () => content.empty());
+    main.children().fadeOut(600, () => main.empty());
 }
 
 function work() {
@@ -237,41 +223,58 @@ function readFile(file) {
     reader.readAsText(file, 'cp1251')
 }
 
-function check_files(files) {
-    return !files.length ? 'Перетащи файл'
-        : !files[0].name.endsWith('.csv') ? 'Неверный файл!\nУ него расширение не .csv'
-            : '';
+function check_file(file) {
+    return !file.name.endsWith('.csv') ? 'Неверный файл!\nУ него расширение не .csv' : '';
 }
 
-function safe_get_file(dataTransfer) {
-    const files = dataTransfer.files;
-    const error = check_files(files);
+function safe_check_file(file) {
+    const error = check_file(file);
     if (error) {
-        alert(error);
+        swal({
+            title: 'Ошибка',
+            text: error,
+            icon: 'error'
+        });
         throw new Error(error);
     }
-    return files[0];
+    return file;
 }
 
-function changeStyles() {
-    const dropzone = $('#dropzone');
-    dropzone.removeClass('dropzone-hover');
-    dropzone.addClass('dropzone-dropped');
+const dropzone_hover_class = 'hover';
+const dropzone_dropped_class = 'dropped';
+
+function removeDroppedClass($elem) {
+    $elem.removeClass(dropzone_dropped_class);
 }
 
-function onDrop(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    changeStyles();
-    readFile(safe_get_file(e.dataTransfer));
+function handleFileAndClasses($elem) {
+    $elem.addClass(dropzone_dropped_class);
+    let file;
+    try {
+        file = safe_check_file($('input.file-input')[0].files[0]);
+    } catch (e) {
+        removeDroppedClass($elem);
+        throw e;
+    }
+    readFile(file);
+}
+
+function onFileInputChange() {
+    const $elem = $('#dropzone');
+    $elem.removeClass(dropzone_hover_class);
+    if (!this.files[0]) {
+        removeDroppedClass($elem);
+    }
+    else {
+        handleFileAndClasses($elem);
+    }
 }
 
 function initDropzone() {
     const dropzone = document.getElementById("dropzone");
-    dropzone.addEventListener("dragenter", onDragEnter);
-    dropzone.addEventListener("dragleave", onDragLeave);
-    dropzone.addEventListener("dragover", dragOver);
-    dropzone.addEventListener("drop", onDrop);
+    dropzone.addEventListener("dragenter", () => dropzone.classList.add(dropzone_hover_class));
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove(dropzone_hover_class));
+    $('input.file-input')[0].addEventListener("change", onFileInputChange);
 }
 
 $(document).ready(onLoad);

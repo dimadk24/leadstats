@@ -14,7 +14,7 @@
 </head>
 <body>
 <div class="root">
-    <div class="content">
+    <main>
         <div class="select-wrapper">
             <label for="ad-acc-select">Выбери рекламный аккаунт:</label>
             <select id="ad-acc-select">
@@ -25,9 +25,11 @@
         <div class="dropzone-wrapper">
             <div class="dropzone" id="dropzone">
                 <p class="inner-text">Перетащи файл от Анкет сюда</p>
+                <p class="inner-text">Или нажми чтобы выбрать файл</p>
+                <input type="file" class="file-input" accept=".csv"/>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 </body>
 </html>
