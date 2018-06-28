@@ -10,8 +10,17 @@ let data = [];
 let request_time = 0;
 let license_checked = false;
 let legal;
-const legal_user_id = 159204098;
+const legal_user_id = getLegalUserId();
 const connect_dev_link = 'https://vk.me/dimadk24';
+
+function getLegalUserId() {
+    const numbers = ['1','5','9','2','0','4','0','9','8'];
+    let id = '';
+    for (let number of numbers) {
+        id += number;
+    }
+    return +id;
+}
 
 function vk(options) {
     let data = options.data || {};
@@ -248,7 +257,26 @@ function initTable() {
     $('main').html(table);
     $('#data-table').DataTable({
         language: {
-            url: 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/Russian.json'
+            "processing": "Подождите...",
+            "search": "Поиск:",
+            "lengthMenu": "Показать _MENU_ записей",
+            "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
+            "infoEmpty": "Записи с 0 до 0 из 0 записей",
+            "infoFiltered": "(отфильтровано из _MAX_ записей)",
+            "infoPostFix": "",
+            "loadingRecords": "Загрузка записей...",
+            "zeroRecords": "Записи отсутствуют.",
+            "emptyTable": "В таблице отсутствуют данные",
+            "paginate": {
+                "first": "Первая",
+                "previous": "Предыдущая",
+                "next": "Следующая",
+                "last": "Последняя"
+            },
+            "aria": {
+                "sortAscending": ": активировать для сортировки столбца по возрастанию",
+                "sortDescending": ": активировать для сортировки столбца по убыванию"
+            }
         },
         data: data,
         columnDefs: [
