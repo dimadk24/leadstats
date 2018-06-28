@@ -39,21 +39,20 @@ function vk(options) {
     });
 }
 
-
-function getUserVkId() {
+function getUserVkData() {
     return new Promise(resolve => vk({
         method: 'users.get'
-    }).then(res => resolve(res[0].uid)));
+    }).then(res => resolve(res[0])));
 }
 
 function showBuyAlert() {
     let text = document.createElement('div');
-    text.innerHTML = '<p>Но это легко исправить:</p>' +
+    text.innerHTML = '<p>Опробуй ее бесплатно перед покупкой!</p>' +
         '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a> и получи</p>' +
-        '<p><span class="free-trial">Бесплатный триальный доступ</span></p>';
+        '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>';
     swal({
         icon: 'warning',
-        title: 'У тебя нет лицензии :(',
+        title: 'Упс, эта программа платная',
         content: {
             element: text
         },
@@ -70,9 +69,10 @@ function showBuyAlert() {
 }
 
 function verifyLicense() {
-    getUserVkId()
-        .then(id => {
-            legal = id === legal_user_id;
+    getUserVkData()
+        .then(data => {
+            const user_vk_id = data.uid || data.id;
+            legal = user_vk_id === legal_user_id;
             if (!legal)
                 showBuyAlert();
             license_checked = true;
@@ -104,7 +104,7 @@ function loadSelectData() {
     vk({method: 'ads.getAccounts'}).then(accounts => {
         $('option#placeholder').remove();
         addLoadedData(accounts);
-    }, err => console.error(err));
+    });
 }
 
 function initSelect() {
@@ -279,7 +279,6 @@ function work() {
                         addSpentsToData(res);
                         removeAdsFromData();
                         addCplToData();
-                        console.log(data);
                         removeLoader().then(() => initTable());
                     }, err => console.error(err));
                 }, err => console.error(err));
