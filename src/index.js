@@ -187,9 +187,37 @@ function showLoader() {
 }
 
 function removeLoader() {
-    const main = $('main');
-    // noinspection JSValidateTypes
-    main.children().fadeOut(600, () => main.empty());
+    return new Promise((resolve) => {
+        const main = $('main');
+        // noinspection JSValidateTypes
+        main.children().fadeOut(600, () => {
+            main.empty();
+            resolve();
+        });
+    })
+}
+
+function initTable() {
+    const table = "<table id='data-table' class='display'><thead><tr>" +
+        "<th>UTM 1</th><th>UTM 2</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
+        "</tr></thead><tbody></tbody></table>";
+    $('main').html(table);
+    $('#data-table').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/Russian.json'
+        },
+        data: data,
+        columnDefs: [
+            {className: 'dt-center', targets: '_all'}
+        ],
+        columns: [
+            {data: 'utm_1'},
+            {data: 'utm_2'},
+            {data: 'count'},
+            {data: 'spent'},
+            {data: 'cpl'}
+        ]
+    });
 }
 
 function work() {
@@ -203,8 +231,8 @@ function work() {
                     addSpentsToData(res);
                     removeAdsFromData();
                     addCplToData();
-                    removeLoader();
                     console.log(data);
+                    removeLoader().then(() => initTable());
                 });
             });
     }
