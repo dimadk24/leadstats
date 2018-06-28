@@ -1,0 +1,2 @@
+// https://oauth.vk.com/authorize?client_id=6604233&redirect_uri=https://oauth.vk.com/blank.html&display=page&scope=ads,offline&response_type=token&v=5.80
+const access_token = '6394fa6452639c9cda1e7ba29814dd0d87eee20a70f90be286b8008fa1eaf789f42f0bea6a79c4fd692b5';
