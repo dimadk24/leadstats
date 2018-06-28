@@ -208,7 +208,8 @@ function initTable() {
         },
         data: data,
         columnDefs: [
-            {className: 'dt-center', targets: '_all'}
+            {targets: '_all', className: 'dt-center'},
+            {targets: [2, 3, 4], searchable: false}
         ],
         columns: [
             {data: 'utm_1'},
