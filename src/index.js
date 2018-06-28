@@ -8,6 +8,10 @@ let ad_cabinet_id = 0;
 let file_content = '';
 let data = [];
 let request_time = 0;
+let license_checked = false;
+let legal;
+const legal_user_id = 159204098;
+const connect_dev_link = 'https://vk.me/dimadk24';
 
 function vk(options) {
     let data = options.data || {};
@@ -26,17 +30,57 @@ function vk(options) {
                 type: 'jsonp', timeout: 2,
                 url: api_url + options.method, data: data,
             })
-                .then(res => res.response ? resolve(res.response) : reject(res))
-                .catch(err => {
-                    console.log(err);
-                    reject(err);
-                })
+                .then(res => res.response ? resolve(res.response) : reject(res),
+                    err => {
+                        console.log(err);
+                        reject(err);
+                    })
         }
     });
 }
 
 
+function getUserVkId() {
+    return new Promise(resolve => vk({
+        method: 'users.get'
+    }).then(res => resolve(res[0].uid)));
+}
+
+function showBuyAlert() {
+    let text = document.createElement('div');
+    text.innerHTML = '<p>Но это легко исправить:</p>' +
+        '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a> и получи</p>' +
+        '<p><span class="free-trial">Бесплатный триальный доступ</span></p>';
+    swal({
+        icon: 'warning',
+        title: 'У тебя нет лицензии :(',
+        content: {
+            element: text
+        },
+        button: {
+            text: 'Получить',
+            value: true,
+            className: 'get-free-trial-button',
+            closeModal: false
+        }
+    }).then(value => {
+        if (value)
+            window.location.href = connect_dev_link;
+    });
+}
+
+function verifyLicense() {
+    getUserVkId()
+        .then(id => {
+            legal = id === legal_user_id;
+            if (!legal)
+                showBuyAlert();
+            license_checked = true;
+        });
+}
+
 function onLoad() {
+    verifyLicense();
     initSelect();
     initDropzone();
 }
@@ -222,20 +266,25 @@ function initTable() {
 }
 
 function work() {
+    if (!license_checked)
+        verifyLicense();
     if (ad_cabinet_id && file_content) {
-        showLoader();
-        parseCsv();
-        getAds()
-            .then(vk_ads => {
-                addAdNamesToData(vk_ads);
-                getAdsStats(getAdIds()).then(res => {
-                    addSpentsToData(res);
-                    removeAdsFromData();
-                    addCplToData();
-                    console.log(data);
-                    removeLoader().then(() => initTable());
-                });
-            });
+        if (legal) {
+            showLoader();
+            parseCsv();
+            getAds()
+                .then(vk_ads => {
+                    addAdNamesToData(vk_ads);
+                    getAdsStats(getAdIds()).then(res => {
+                        addSpentsToData(res);
+                        removeAdsFromData();
+                        addCplToData();
+                        console.log(data);
+                        removeLoader().then(() => initTable());
+                    }, err => console.error(err));
+                }, err => console.error(err));
+        } else
+            showBuyAlert();
     }
 }
 

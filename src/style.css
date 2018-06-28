@@ -11,7 +11,8 @@ body {
 }
 
 .root {
-    width: 850px;
+    max-width: 850px;
+    min-width: 800px;
     margin: 0 auto;
     background-color: white;
     padding: 15px;
@@ -75,4 +76,20 @@ input.file-input {
 .loading > .sk-circle > .sk-child {
     width: 50px;
     height: 50px;
+}
+
+div.swal-content {
+    font-size: large;
+}
+
+.free-trial {
+    font-weight: bold;
+}
+
+.get-free-trial-button {
+    background-color: #dc1212;
+}
+
+div.swal-content > div > p {
+    margin-bottom: 3px;
 }
