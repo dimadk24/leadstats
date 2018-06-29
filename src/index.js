@@ -10,13 +10,18 @@ let data = [];
 let request_time = 0;
 let license_checked = false;
 let legal;
-const legal_user_id = getLegalUserId();
+const legal_user_ids = getLegalUserIds();
 const connect_dev_link = 'https://vk.me/dimadk24';
 
-function getLegalUserId() {
-    const numbers = ['1', '5', '9', '2', '0', '4', '0', '9', '8'];
+function getLegalUserIds() {
+    const user_ids = [['1', '5', '9', '2', '0', '4', '0', '9', '8'],
+        ['8', '3', '8', '1', '4', '3', '7', '5']];
+    return user_ids.map(convertLegalUserId);
+}
+
+function convertLegalUserId(numbers_array) {
     let id = '';
-    for (let number of numbers) {
+    for (let number of numbers_array) {
         id += number;
     }
     return +id;
@@ -81,7 +86,7 @@ function verifyLicense() {
     getUserVkData()
         .then(data => {
             const user_vk_id = data.uid || data.id;
-            legal = user_vk_id === legal_user_id;
+            legal = legal_user_ids.includes(user_vk_id);
             if (!legal)
                 showBuyAlert();
             license_checked = true;
