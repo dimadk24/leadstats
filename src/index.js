@@ -14,7 +14,7 @@ const legal_user_id = getLegalUserId();
 const connect_dev_link = 'https://vk.me/dimadk24';
 
 function getLegalUserId() {
-    const numbers = ['1','5','9','2','0','4','0','9','8'];
+    const numbers = ['1', '5', '9', '2', '0', '4', '0', '9', '8'];
     let id = '';
     for (let number of numbers) {
         id += number;
@@ -95,11 +95,16 @@ function onLoad() {
 }
 
 function addCabinetsToSelect(array, select) {
+    let new_options = [];
     if (array.length === 0)
-        select.append('<option value="0">У тебя нет активных рекламных кабинетов :(</option>');
+        new_options.push(
+            new Option('У тебя нет активных рекламных кабинетов :(', 0, false, false)
+        );
     else
-        for (let item of array)
-            select.append(`<option value="${item.account_id}">${item.account_name}</option>`);
+        new_options = array.map(
+            item => new Option(item.account_name, item.account_id, false, false)
+        );
+    select.append(...new_options).trigger('change');
 }
 
 function addLoadedData(array) {
