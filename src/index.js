@@ -12,6 +12,8 @@ let license_checked = false;
 let legal;
 const legal_user_ids = getLegalUserIds();
 const connect_dev_link = 'https://vk.me/dimadk24';
+let adAccounts = [];
+let agencyClient;
 
 function getLegalUserIds() {
     const user_ids = [['1', '5', '9', '2', '0', '4', '0', '9', '8'],
@@ -99,41 +101,101 @@ function onLoad() {
     initDropzone();
 }
 
-function addCabinetsToSelect(array, select) {
-    let new_options = [];
-    if (array.length === 0)
-        new_options.push(
-            new Option('У тебя нет активных рекламных кабинетов :(', 0, false, false)
-        );
-    else
-        new_options = array.map(
-            item => new Option(item.account_name, item.account_id, false, false)
-        );
-    select.append(...new_options).trigger('change');
+function convertCabinetsToOptions(array) {
+    return array.map(item => {
+        return {name: item.account_name, id: item.account_id}
+    });
 }
 
-function addLoadedData(array) {
+function addCabinetsToSelect(array, select) {
+    let optionArray = convertCabinetsToOptions(array);
+    if (optionArray.length === 0)
+        optionArray.push({name: 'У тебя нет активных рекламных кабинетов :(', id: 0});
+    addItemsToSelect(optionArray, select);
+}
+
+function addItemsToSelect(array, select) {
+    const options = array.map(item => new Option(item.name, item.id, false, false));
+    select.append(...options).trigger('change');
+}
+
+function filterCabinets(array) {
     array = array.filter(item =>
         item.account_status && ['admin', 'manager'].includes(item.access_role)
     );
-    addCabinetsToSelect(array, $('select#ad-acc-select'));
+    return array;
+}
+
+function setAdAccounts(array) {
+    adAccounts = array.map(item => {
+        return {id: item.account_id, type: item.account_type}
+    });
+}
+
+function removePlaceholderOption() {
+    $('option#placeholder').remove();
+}
+
+function addPlaceholderOption() {
+    $('select#ad-acc-select').html(
+        '<option id="placeholder" value="0">Загружаю клиентов кабинета</option>'
+    );
 }
 
 function loadSelectData() {
-    vk({method: 'ads.getAccounts'}).then(accounts => {
-        $('option#placeholder').remove();
-        addLoadedData(accounts);
-    });
+    vk({method: 'ads.getAccounts'})
+        .then(accounts => {
+            removePlaceholderOption();
+            accounts = filterCabinets(accounts);
+            setAdAccounts(accounts);
+            addCabinetsToSelect(accounts, $('select#ad-acc-select'));
+        });
+}
+
+function cabinetIsAgency(cabinet_id) {
+    const cabinet_obj = adAccounts.find(acc => acc.id === parseInt(cabinet_id));
+    return cabinet_obj.type === 'agency'
+}
+
+function removeUselessAgencyClientStuff(item) {
+    return {name: item.name, id: item.id}
+}
+
+function getAgencyClients(accountId) {
+    return new Promise(
+        resolve => vk({
+            method: 'ads.getClients',
+            data: {account_id: accountId}
+        })
+            .then(res => resolve(res.map(removeUselessAgencyClientStuff)))
+    );
+}
+
+function onCabinetSelect(e, select) {
+    ad_cabinet_id = e.params.data.id;
+    if (cabinetIsAgency(ad_cabinet_id)) {
+        select.html('');
+        addPlaceholderOption();
+        getAgencyClients(ad_cabinet_id)
+            .then(clients => {
+                select.off('select2:select');
+                $('label[for="ad-acc-select"]').html('Выбери клиента агентского кабинета:');
+                removePlaceholderOption();
+                addItemsToSelect(clients, select);
+                const firstClientId = clients[0].id;
+                agencyClient = firstClientId;
+                select.val(firstClientId.toString()).trigger('change');
+                select.on('select2:select', (e) => agencyClient = e.params.data.id);
+            });
+    }
+    work();
 }
 
 function initSelect() {
     const select = $('select#ad-acc-select');
     select.select2({placeholder: "Выбрать", language: "ru"});
     loadSelectData();
-    select.on('select2:select', (e) => {
-        ad_cabinet_id = e.params.data.id;
-        work();
-    });
+    select.on('select2:select', (e) => onCabinetSelect(e, select));
 }
 
 function removeShit(str) {
@@ -141,12 +203,15 @@ function removeShit(str) {
 }
 
 function getAds() {
+    const data = {
+        account_id: ad_cabinet_id,
+        include_deleted: 0,
+    };
+    if (agencyClient)
+        data.client_id = agencyClient;
     return vk({
         method: 'ads.getAds',
-        data: {
-            account_id: ad_cabinet_id,
-            include_deleted: 0,
-        }
+        data: data
     });
 }
 
@@ -160,16 +225,19 @@ function convertRecord(obj) {
 }
 
 function getAdsStats(ads) {
+    const data = {
+        account_id: ad_cabinet_id,
+        ids_type: 'ad',
+        ids: JSON.stringify(ads),
+        period: 'overall',
+        date_from: 0,
+        date_to: 0,
+    };
+    if (agencyClient)
+        data.client_id = agencyClient;
     return vk({
         method: 'ads.getStatistics',
-        data: {
-            account_id: ad_cabinet_id,
-            ids_type: 'ad',
-            ids: JSON.stringify(ads),
-            period: 'overall',
-            date_from: 0,
-            date_to: 0,
-        }
+        data: data
     });
 }
 
