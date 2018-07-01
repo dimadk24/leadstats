@@ -47,7 +47,7 @@ function getErrorText(error_code) {
         603: 'Произошла ошибка при работе с РК'
     };
     const error_text = errors[error_code];
-    return error_text? error_text : 'Неизвестная ошибка';
+    return error_text ? error_text : 'Неизвестная ошибка';
 }
 
 function vk(options) {
@@ -303,7 +303,7 @@ function parseCsv() {
     csv.forEach(addToData);
 }
 
-function addAdNamesToData(ads) {
+function addAdsToData(ads) {
     for (let record of data) {
         record.ads = [];
         for (let ad of ads) {
@@ -420,13 +420,24 @@ function work() {
             parseCsv();
             getAds()
                 .then(vk_ads => {
-                    addAdNamesToData(vk_ads);
-                    getAdsStats(getAdIds()).then(res => {
-                        addSpentsToData(res);
-                        removeAdsFromData();
-                        addCplToData();
-                        removeLoader().then(() => initTable());
-                    }, err => console.error(err));
+                    addAdsToData(vk_ads);
+                    const adIds = getAdIds();
+                    if (adIds.length)
+                        getAdsStats(adIds).then(res => {
+                            addSpentsToData(res);
+                            removeAdsFromData();
+                            addCplToData();
+                            removeLoader().then(() => initTable());
+                        }, err => console.error(err));
+                    else {
+                        swal({
+                            icon: 'error',
+                            title: 'Ошибка',
+                            text: "Нет объявлений, в названии которых есть нужный текст.\n" +
+                            'Читай в ReadMe, как связываются объявления и лиды'
+                        })
+                            .then(() => removeLoader());
+                    }
                 }, err => console.error(err));
         } else
             showBuyAlert();
