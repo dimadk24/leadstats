@@ -29,6 +29,27 @@ function convertLegalUserId(numbers_array) {
     return +id;
 }
 
+function getErrorText(error_code) {
+    const errors = {
+        1: 'Неизвестная для ВК ошибка. Попробуй позже',
+        5: 'Авторизация не удалась, обнови токен доступа.\n' +
+        'Как это сделать читай в ReadMe',
+        6: 'Слишком много запросов в секунду',
+        7: 'Нет прав для выполнения данного действия',
+        9: 'Слишком много однотипных действий',
+        10: 'Внутренняя ошибка ВК. Попробуй позже',
+        14: 'Требуется ввод капчи, но ее обработка не сделана',
+        15: 'Доступ к контенту запрещен',
+        17: 'Требуется валидация пользователя',
+        29: 'Достигнут количественный лимит ВК',
+        600: 'Нет прав на выполнения этого действия с РК',
+        601: 'Превышено количество запросов за день.\nПопробуй позже',
+        603: 'Произошла ошибка при работе с РК'
+    };
+    const error_text = errors[error_code];
+    return error_text? error_text : 'Неизвестная ошибка';
+}
+
 function vk(options) {
     let data = options.data || {};
     data.access_token = access_token;
@@ -46,7 +67,21 @@ function vk(options) {
                 type: 'jsonp', timeout: 2,
                 url: api_url + options.method, data: data,
             })
-                .then(res => res.response ? resolve(res.response) : reject(res),
+                .then(res => {
+                        if (res.response) {
+                            resolve(res.response)
+                        } else {
+                            const error_code = res.error.error_code;
+                            const error_message = res.error.error_msg;
+                            const error_nice_text = getErrorText(error_code);
+                            swal({
+                                icon: 'error',
+                                title: 'Возникла ошибка при работе с ВК',
+                                text: error_nice_text
+                            });
+                            throw new Error(`#${error_code}: ${error_message}`);
+                        }
+                    },
                     err => {
                         console.log(err);
                         reject(err);
