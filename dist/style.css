@@ -78,7 +78,7 @@ input.file-input {
     height: 50px;
 }
 
-div.swal-content {
+div.swal-content, div.swal-text {
     font-size: large;
 }
 
