@@ -182,13 +182,18 @@ function onCabinetSelect(e, select) {
                 $('label[for="ad-acc-select"]').html('Выбери клиента агентского кабинета:');
                 removePlaceholderOption();
                 addItemsToSelect(clients, select);
-                const firstClientId = clients[0].id;
-                agencyClient = firstClientId;
-                select.val(firstClientId.toString()).trigger('change');
-                select.on('select2:select', (e) => agencyClient = e.params.data.id);
+                if (clients.length === 1) {
+                    agencyClient = clients[0].id;
+                    work();
+                }
+                else
+                    select.on('select2:select', (e) => {
+                        agencyClient = e.params.data.id;
+                        work();
+                    });
             });
-    }
-    work();
+    } else
+        work();
 }
 
 function initSelect() {
