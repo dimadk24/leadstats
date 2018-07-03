@@ -78,6 +78,7 @@ function vk(options) {
                                 title: 'Возникла ошибка при работе с ВК',
                                 text: error_nice_text
                             });
+                            console.error(res.error);
                             throw new Error(`#${error_code}: ${error_message}`);
                         }
                     },
@@ -241,9 +242,10 @@ function removeShit(str) {
     return str.includes('&') ? str.split('&', 1)[0] : str;
 }
 
-function getAds() {
+function getAds(campaigns) {
     const data = {
         account_id: ad_cabinet_id,
+        campaign_ids: JSON.stringify(campaigns),
         include_deleted: 0,
     };
     if (agencyClient)
@@ -280,7 +282,7 @@ function getAdsStats(ads) {
     });
 }
 
-function getAdIds() {
+function getAdIds(data) {
     let ids = new Set();
     for (let record of data) {
         for (let ad of record.ads) {
@@ -306,8 +308,11 @@ function addAdsToData(ads) {
     for (let record of data) {
         record.ads = [];
         for (let ad of ads) {
-            if (ad.name.includes(record.str_utm))
+            if (record.campaigns.includes(ad.campaign_id) &&
+                ad.name.includes(record.str_utm)
+            ) {
                 record.ads.push(parseInt(ad.id));
+            }
         }
     }
 }
@@ -323,13 +328,14 @@ function addSpentsToData(vk_stats) {
     }
 }
 
-function removeAdsFromData() {
+function removeAdsFromData(data) {
     for (let record of data) {
         record.ads = undefined;
     }
 }
 
-function addCplToData() {
+function addCplToData(data) {
+    // noinspection JSUnusedAssignment
     data = data.map(record => {
         record.cpl = +(record.spent / record.count).toFixed(2);
         return record
@@ -412,10 +418,65 @@ function initTable() {
 }
 
 function showErrorAlert(options) {
-    const options = options || {};
+    options = options || {};
     options.title = options.title || 'Ошибка';
     options.icon = 'error';
-    swal(options);
+    return swal(options);
+}
+
+function removeUselessCampaignStuff(campaign) {
+    return {
+        id: campaign.id,
+        name: campaign.name
+    }
+}
+
+function filterCampaigns(campaigns) {
+    return campaigns.filter(
+        campaign => ['normal', 'promoted_posts'].includes(campaign.type)
+    );
+}
+
+function getCampaigns() {
+    let data = {
+        account_id: ad_cabinet_id,
+        include_deleted: 0,
+    };
+    if (agencyClient)
+        data.client_id = agencyClient;
+    return new Promise(
+        (resolve, reject) =>
+            vk({
+                method: 'ads.getCampaigns',
+                data: data
+            })
+                .then(res => {
+                    resolve(filterCampaigns(res).map(removeUselessCampaignStuff));
+                })
+    );
+}
+
+function addCampaignsToData(campaigns) {
+    for (let record of data) {
+        record.campaigns = [];
+        for (let campaign of campaigns) {
+            if (campaign.name.includes(record.utm_1))
+                record.campaigns.push(campaign.id);
+        }
+    }
+}
+
+function getCampaignIds(data) {
+    let ids = new Set();
+    for (let record of data)
+        for (let campaign of record.campaigns)
+            ids.add(campaign);
+    return [...ids];
+}
+
+function removeCampaigns(data) {
+    // noinspection JSUnusedAssignment
+    data = data.map(record => record.campaigns = undefined);
 }
 
 function work() {
@@ -425,25 +486,33 @@ function work() {
         if (legal) {
             showLoader();
             parseCsv();
-            getAds()
-                .then(vk_ads => {
-                    addAdsToData(vk_ads);
-                    const adIds = getAdIds();
-                    if (adIds.length)
-                        getAdsStats(adIds).then(res => {
-                            addSpentsToData(res);
-                            removeAdsFromData();
-                            addCplToData();
-                            removeLoader().then(() => initTable());
-                        }, err => console.error(err));
-                    else {
+            getCampaigns()
+                .then(campaigns => {
+                    addCampaignsToData(campaigns);
+                    return getAds(getCampaignIds(data));
+                })
+                .then(ads => {
+                    addAdsToData(ads);
+                    removeCampaigns(data);
+                    const adIds = getAdIds(data);
+                    if (!adIds.length) {
                         showErrorAlert({
-                            text: "Нет объявлений, в названии которых есть нужный текст.\n" +
+                            text: "Нет объявлений, подходящих под условия.\n" +
                             'Читай в ReadMe, как связываются объявления и лиды'
                         })
                             .then(() => removeLoader());
-                    }
-                }, err => console.error(err));
+                        throw new Error('No ads');
+                    } else
+                        return getAdsStats(adIds);
+                })
+                .then(res => {
+                    addSpentsToData(res);
+                    removeAdsFromData(data);
+                    addCplToData(data);
+                    return removeLoader();
+                })
+                .then(() => initTable())
+                .catch(err => console.error(err));
         } else
             showBuyAlert();
     }
