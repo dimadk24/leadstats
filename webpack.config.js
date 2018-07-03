@@ -1,15 +1,22 @@
 const path = require('path');
 
-module.exports = {
+let config = {
     entry: './src/index.js',
-    // devtool: 'inline-source-map',
     output: {
         filename: 'index.js',
         path: path.resolve(__dirname, 'dist')
     },
     module: {
         rules: [
-            { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
+            {test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"}
         ]
     }
+};
+
+module.exports = env => {
+    if (env.mode === 'development')
+        config.devtool = 'inline-source-map';
+    config.mode = env.mode;
+    return config;
+    // noinspection WebpackConfigHighlighting
 };
