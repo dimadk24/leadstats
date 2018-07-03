@@ -258,7 +258,7 @@ function getAds() {
 function convertRecord(obj) {
     let new_obj = {};
     new_obj.utm_1 = removeShit(obj.utm_1).replace(/^\D+/g, '');
-    new_obj.utm_2 = obj.utm_2;
+    new_obj.utm_2 = removeShit(obj.utm_2);
     new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2;
     new_obj.count = 1;
     return new_obj;
@@ -320,6 +320,7 @@ function addSpentsToData(vk_stats) {
             if (record.ads.includes(ad_stats.id))
                 record.spent += parseFloat(ad_stats.stats[0].spent);
         }
+        record.spent = +record.spent.toFixed(2);
     }
 }
 
