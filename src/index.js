@@ -74,8 +74,7 @@ function vk(options) {
                             const error_code = res.error.error_code;
                             const error_message = res.error.error_msg;
                             const error_nice_text = getErrorText(error_code);
-                            swal({
-                                icon: 'error',
+                            showErrorAlert({
                                 title: 'Возникла ошибка при работе с ВК',
                                 text: error_nice_text
                             });
@@ -412,6 +411,13 @@ function initTable() {
     });
 }
 
+function showErrorAlert(options) {
+    const options = options || {};
+    options.title = options.title || 'Ошибка';
+    options.icon = 'error';
+    swal(options);
+}
+
 function work() {
     if (!license_checked)
         verifyLicense();
@@ -431,9 +437,7 @@ function work() {
                             removeLoader().then(() => initTable());
                         }, err => console.error(err));
                     else {
-                        swal({
-                            icon: 'error',
-                            title: 'Ошибка',
+                        showErrorAlert({
                             text: "Нет объявлений, в названии которых есть нужный текст.\n" +
                             'Читай в ReadMe, как связываются объявления и лиды'
                         })
@@ -465,11 +469,7 @@ function check_file(file) {
 function safe_check_file(file) {
     const error = check_file(file);
     if (error) {
-        swal({
-            title: 'Ошибка',
-            text: error,
-            icon: 'error'
-        });
+        showErrorAlert({text: error});
         throw new Error(error);
     }
     return file;
