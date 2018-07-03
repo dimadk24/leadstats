@@ -18,5 +18,4 @@ module.exports = env => {
         config.devtool = 'inline-source-map';
     config.mode = env.mode;
     return config;
-    // noinspection WebpackConfigHighlighting
 };
