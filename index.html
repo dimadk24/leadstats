@@ -11,6 +11,7 @@
     <script src="library/select2.i18n.ru.js"></script>
     <link rel="stylesheet" href="library/DataTables/datatables.min.css">
     <script src="library/DataTables/datatables.min.js"></script>
+    <link rel="stylesheet" href="library/flatpickr.min.css">
     <link rel="stylesheet" href="dist/style.css">
     <link rel="stylesheet" href="dist/spinner.css">
     <script src="settings.js"></script>
@@ -31,6 +32,18 @@
                 <p class="inner-text">Перетащи файл от Анкет сюда</p>
                 <p class="inner-text">Или нажми, чтобы выбрать файл</p>
                 <input type="file" class="file-input" accept=".csv"/>
+            </div>
+        </div>
+        <div class="botton-wrapper">
+            <div class="calendar-wrapper">
+                <label for="calendar-input">Выбери временной промежуток статистики:</label>
+                <input id="calendar-input">
+                <p class="hint">По умолчанию скрипт соберет статистику за все время</p>
+            </div>
+            <div class="start-button-wrapper">
+                <button class="start">
+                    Запустить
+                </button>
             </div>
         </div>
     </main>

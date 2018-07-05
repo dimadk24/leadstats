@@ -19,14 +19,17 @@ body {
     border-radius: 0 0 5px 5px;
 }
 
+main > * {
+    margin: 3px 0 15px 0;
+}
+
 .select-wrapper {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    margin: 3px 0 15px 0;
 }
 
-label[for="ad-acc-select"] {
+label {
     margin: auto 13px auto 0;
 }
 
@@ -92,4 +95,39 @@ div.swal-content, div.swal-text {
 
 div.swal-content > div > p {
     margin-bottom: 3px;
+}
+
+input#calendar-input {
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid black;
+    text-align: center;
+    width: 11rem;
+}
+
+.botton-wrapper {
+    display: flex;
+}
+
+.start-button-wrapper {
+    margin: 0 auto;
+}
+
+button.start {
+    font-size: large;
+    padding: 7px 25px;
+    background-color: #f9f9f9;
+    border: 1px solid black;
+    border-radius: 5px;
+    cursor: pointer;
+    transition-duration: 250ms;
+}
+
+button.start:hover, button.start:active {
+    background-color: #e9e9e9;
+}
+
+p.hint {
+    color: #616161;
+    margin-top: 5px;
 }

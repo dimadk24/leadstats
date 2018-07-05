@@ -1,6 +1,10 @@
 import CSV from 'comma-separated-values/csv';
 import catta from 'catta';
 import swal from 'sweetalert';
+import flatpickr from 'flatpickr';
+import {Russian} from 'flatpickr/dist/l10n/ru'
+
+flatpickr.localize(Russian);
 
 const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
@@ -14,6 +18,8 @@ const legal_user_ids = getLegalUserIds();
 const connect_dev_link = 'https://vk.me/dimadk24';
 let adAccounts = [];
 let agencyClient;
+let statsRange;
+let calendarInput;
 
 function getLegalUserIds() {
     const user_ids = [['1', '5', '9', '2', '0', '4', '0', '9', '8'],
@@ -68,24 +74,24 @@ function vk(options) {
                 url: api_url + options.method, data: data,
             })
                 .then(res => {
-                        if (res.response) {
-                            resolve(res.response)
-                        } else {
-                            const error_code = res.error.error_code;
-                            const error_message = res.error.error_msg;
-                            const error_nice_text = getErrorText(error_code);
-                            showErrorAlert({
-                                title: 'Возникла ошибка при работе с ВК',
-                                text: error_nice_text
-                            });
-                            console.error(res.error);
-                            throw new Error(`#${error_code}: ${error_message}`);
-                        }
-                    },
-                    err => {
-                        console.log(err);
-                        reject(err);
-                    })
+                    if (res.response) {
+                        resolve(res.response)
+                    } else {
+                        const error_code = res.error.error_code;
+                        const error_message = res.error.error_msg;
+                        const error_nice_text = getErrorText(error_code);
+                        showErrorAlert({
+                            title: 'Возникла ошибка при работе с ВК',
+                            text: error_nice_text
+                        });
+                        console.error(res.error);
+                        throw new Error(`#${error_code}: ${error_message}`);
+                    }
+                }, err => {
+                    showErrorAlert({text: 'Сетевая ошибка.\nПроверь соединие с Интернетом'});
+                    console.log(err);
+                    reject(err);
+                })
         }
     });
 }
@@ -130,10 +136,49 @@ function verifyLicense() {
         });
 }
 
+function initCalendars() {
+    calendarInput = flatpickr('#calendar-input', {
+        mode: 'range',
+        dateFormat: 'j.m.Y'
+    });
+}
+
+function checkInputs() {
+    let error;
+    if (!ad_cabinet_id)
+        error = 'Не выбран кабинет.\nВыбери его сверху';
+    else if (!file_content)
+        error = 'Не выбран файл от Анкет.\nПеретащи или выбери его';
+    return error;
+}
+
+function getDatesRange() {
+    const selectedDates = calendarInput.selectedDates;
+    return selectedDates ? selectedDates : undefined;
+}
+
+function onStart() {
+    statsRange = getDatesRange();
+    const error = checkInputs();
+    if (error)
+        showErrorAlert({text: error});
+    else {
+        if (license_checked) {
+            if (!legal)
+                showBuyAlert();
+        } else
+            verifyLicense();
+        if (legal)
+            work();
+    }
+}
+
 function onLoad() {
     verifyLicense();
     initSelect();
     initDropzone();
+    initCalendars();
+    $('button.start').on('click', onStart);
 }
 
 function convertCabinetsToOptions(array) {
@@ -217,18 +262,12 @@ function onCabinetSelect(e, select) {
                 $('label[for="ad-acc-select"]').html('Выбери клиента агентского кабинета:');
                 removePlaceholderOption();
                 addItemsToSelect(clients, select);
-                if (clients.length === 1) {
+                if (clients.length === 1)
                     agencyClient = clients[0].id;
-                    work();
-                }
                 else
-                    select.on('select2:select', (e) => {
-                        agencyClient = e.params.data.id;
-                        work();
-                    });
+                    select.on('select2:select', e => agencyClient = e.params.data.id);
             });
-    } else
-        work();
+    }
 }
 
 function initSelect() {
@@ -265,14 +304,27 @@ function convertRecord(obj) {
     return new_obj;
 }
 
+function formatDate4VK(dateObj) {
+    return flatpickr.formatDate(dateObj, "Y-m-d");
+}
+
+function convertDatesRange4VK(dateRange) {
+    if (dateRange.length === 0)
+        return [0, 0];
+    else
+        return dateRange.map(date => formatDate4VK(date));
+}
+
 function getAdsStats(ads) {
+    const vkStatsRange = convertDatesRange4VK(statsRange);
+    const period = statsRange.length ? 'day' : 'overall';
     const data = {
         account_id: ad_cabinet_id,
         ids_type: 'ad',
         ids: JSON.stringify(ads),
-        period: 'overall',
-        date_from: 0,
-        date_to: 0,
+        period: period,
+        date_from: vkStatsRange[0],
+        date_to: vkStatsRange[1],
     };
     if (agencyClient)
         data.client_id = agencyClient;
@@ -321,8 +373,14 @@ function addSpentsToData(vk_stats) {
     for (let record of data) {
         record.spent = 0.0;
         for (let ad_stats of vk_stats) {
-            if (record.ads.includes(ad_stats.id))
-                record.spent += parseFloat(ad_stats.stats[0].spent);
+            if (record.ads.includes(ad_stats.id)) {
+                let spent = 0.0;
+                if (ad_stats.stats.length)
+                    for (let stat of ad_stats.stats) {
+                        spent += parseFloat(stat.spent || 0);
+                    }
+                record.spent += spent;
+            }
         }
         record.spent = +record.spent.toFixed(2);
     }
@@ -480,42 +538,35 @@ function removeCampaigns(data) {
 }
 
 function work() {
-    if (!license_checked)
-        verifyLicense();
-    if (ad_cabinet_id && file_content) {
-        if (legal) {
-            showLoader();
-            parseCsv();
-            getCampaigns()
-                .then(campaigns => {
-                    addCampaignsToData(campaigns);
-                    return getAds(getCampaignIds(data));
+    showLoader();
+    parseCsv();
+    getCampaigns()
+        .then(campaigns => {
+            addCampaignsToData(campaigns);
+            return getAds(getCampaignIds(data));
+        })
+        .then(ads => {
+            addAdsToData(ads);
+            removeCampaigns(data);
+            const adIds = getAdIds(data);
+            if (!adIds.length) {
+                showErrorAlert({
+                    text: "Нет объявлений, подходящих под условия.\n" +
+                    'Читай в ReadMe, как связываются объявления и лиды'
                 })
-                .then(ads => {
-                    addAdsToData(ads);
-                    removeCampaigns(data);
-                    const adIds = getAdIds(data);
-                    if (!adIds.length) {
-                        showErrorAlert({
-                            text: "Нет объявлений, подходящих под условия.\n" +
-                            'Читай в ReadMe, как связываются объявления и лиды'
-                        })
-                            .then(() => removeLoader());
-                        throw new Error('No ads');
-                    } else
-                        return getAdsStats(adIds);
-                })
-                .then(res => {
-                    addSpentsToData(res);
-                    removeAdsFromData(data);
-                    addCplToData(data);
-                    return removeLoader();
-                })
-                .then(() => initTable())
-                .catch(err => console.error(err));
-        } else
-            showBuyAlert();
-    }
+                    .then(() => removeLoader());
+                throw new Error('No ads');
+            } else
+                return getAdsStats(adIds);
+        })
+        .then(res => {
+            addSpentsToData(res);
+            removeAdsFromData(data);
+            addCplToData(data);
+            return removeLoader();
+        })
+        .then(() => initTable())
+        .catch(err => console.error(err));
 }
 
 function remove_header(text) {
@@ -524,10 +575,7 @@ function remove_header(text) {
 
 function readFile(file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-        file_content = e.target.result;
-        work();
-    };
+    reader.onload = e => file_content = e.target.result;
     reader.readAsText(file, 'cp1251')
 }
 
