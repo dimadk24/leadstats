@@ -556,7 +556,6 @@ function work() {
         })
         .then(ads => {
             addAdsToData(ads);
-            console.log(data);
             removeCampaigns(data);
             const adIds = getAdIds(data);
             if (!adIds.length) {
