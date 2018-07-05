@@ -131,3 +131,7 @@ p.hint {
     color: #616161;
     margin-top: 5px;
 }
+
+.summary-wrapper {
+    text-align: center;
+}

@@ -88,7 +88,10 @@ function vk(options) {
                         throw new Error(`#${error_code}: ${error_message}`);
                     }
                 }, err => {
-                    showErrorAlert({text: 'Сетевая ошибка.\nПроверь соединие с Интернетом'});
+                    showErrorAlert({
+                        text: 'Сетевая ошибка.\n' +
+                        'Проверь соединие с Интернетом и обнови страницу'
+                    });
                     console.log(err);
                     reject(err);
                 })
@@ -443,7 +446,7 @@ function initTable() {
     const table = "<table id='data-table' class='display'><thead><tr>" +
         "<th>UTM 1</th><th>UTM 2</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
         "</tr></thead><tbody></tbody></table>";
-    $('main').html(table);
+    $('main').append(table);
     $('#data-table').DataTable({
         language: {
             "processing": "Подождите...",
@@ -546,6 +549,32 @@ function removeCampaigns(data) {
     data = data.map(record => record.campaigns = undefined);
 }
 
+function countSummaryInfo() {
+    const leads = data.reduce((accumulator, record) => accumulator + record.count, 0);
+    const spents = +data.reduce(
+        (accumulator, record) => accumulator + record.spent,
+        0).toFixed(2);
+    const cpl = +(spents / leads).toFixed(2);
+    return {leads, spents, cpl};
+}
+
+function createSummaryText(leads, spents, cpl) {
+    return `лидов: ${leads}, потрачено ${spents} руб, средняя цена лида: ${cpl}`;
+}
+
+function appendSummaryText(text) {
+    const wrapper = $('<div class="summary-wrapper"></div>');
+    wrapper.append('<p>Суммарно:</p>');
+    wrapper.append(`<p>${text}</p>`);
+    $('main').append(wrapper);
+}
+
+function addSummaryText() {
+    const {leads, spents, cpl} = countSummaryInfo();
+    const text = createSummaryText(leads, spents, cpl);
+    appendSummaryText(text);
+}
+
 function work() {
     showLoader();
     parseCsv();
@@ -574,7 +603,10 @@ function work() {
             addCplToData(data);
             return removeLoader();
         })
-        .then(() => initTable())
+        .then(() => {
+            addSummaryText();
+            initTable();
+        })
         .catch(err => console.error(err));
 }
 
