@@ -359,11 +359,13 @@ function parseCsv() {
 function addAdsToData(ads) {
     for (let record of data) {
         record.ads = [];
-        for (let ad of ads) {
-            if (record.campaigns.includes(ad.campaign_id) &&
-                ad.name.includes(record.str_utm)
-            ) {
-                record.ads.push(parseInt(ad.id));
+        if (record.utm_1 && record.utm_2) {
+            for (let ad of ads) {
+                if (record.campaigns.includes(ad.campaign_id) &&
+                    ad.name.includes(record.str_utm)
+                ) {
+                    record.ads.push(parseInt(ad.id));
+                }
             }
         }
     }
@@ -372,17 +374,19 @@ function addAdsToData(ads) {
 function addSpentsToData(vk_stats) {
     for (let record of data) {
         record.spent = 0.0;
-        for (let ad_stats of vk_stats) {
-            if (record.ads.includes(ad_stats.id)) {
-                let spent = 0.0;
-                if (ad_stats.stats.length)
-                    for (let stat of ad_stats.stats) {
-                        spent += parseFloat(stat.spent || 0);
-                    }
-                record.spent += spent;
+        if (record.utm_1 && record.utm_2) {
+            for (let ad_stats of vk_stats) {
+                if (record.ads.includes(ad_stats.id)) {
+                    let spent = 0.0;
+                    if (ad_stats.stats.length)
+                        for (let stat of ad_stats.stats) {
+                            spent += parseFloat(stat.spent || 0);
+                        }
+                    record.spent += spent;
+                }
             }
+            record.spent = +record.spent.toFixed(2);
         }
-        record.spent = +record.spent.toFixed(2);
     }
 }
 
@@ -395,7 +399,10 @@ function removeAdsFromData(data) {
 function addCplToData(data) {
     // noinspection JSUnusedAssignment
     data = data.map(record => {
-        record.cpl = +(record.spent / record.count).toFixed(2);
+        if (record.utm_1 && record.utm_2) {
+            record.cpl = +(record.spent / record.count).toFixed(2);
+        } else
+            record.cpl = 0;
         return record
     });
 }
@@ -517,9 +524,11 @@ function getCampaigns() {
 function addCampaignsToData(campaigns) {
     for (let record of data) {
         record.campaigns = [];
-        for (let campaign of campaigns) {
-            if (campaign.name.includes(record.utm_1))
-                record.campaigns.push(campaign.id);
+        if (record.utm_1 && record.utm_2) {
+            for (let campaign of campaigns) {
+                if (campaign.name.includes(record.utm_1))
+                    record.campaigns.push(campaign.id);
+            }
         }
     }
 }
@@ -547,6 +556,7 @@ function work() {
         })
         .then(ads => {
             addAdsToData(ads);
+            console.log(data);
             removeCampaigns(data);
             const adIds = getAdIds(data);
             if (!adIds.length) {
