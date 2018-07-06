@@ -220,8 +220,9 @@ function removePlaceholderOption() {
 }
 
 function addPlaceholderOption() {
+    // noinspection XmlDefaultAttributeValue
     $('select#ad-acc-select').html(
-        '<option id="placeholder" value="0">Загружаю клиентов кабинета</option>'
+        '<option id="placeholder" value="0" disabled="disabled">Загружаю клиентов кабинета</option>'
     );
 }
 
