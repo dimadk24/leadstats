@@ -15,7 +15,7 @@ let config = {
 
 module.exports = env => {
     if (env.mode === 'development')
-        config.devtool = 'inline-source-map';
+        config.devtool = 'eval-source-map';
     config.mode = env.mode;
     return config;
 };
