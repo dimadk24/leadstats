@@ -10,7 +10,7 @@ const api_url = 'https://api.vk.com/method/';
 const api_version = 5.80;
 let ad_cabinet_id = 0;
 let file_content = '';
-let data = [];
+let fileData = [];
 let request_time = 0;
 let license_checked = false;
 let legal;
@@ -338,9 +338,9 @@ function getAdsStats(ads) {
     });
 }
 
-function getAdIds(data) {
+function getAdIds() {
     let ids = new Set();
-    for (let record of data) {
+    for (let record of fileData) {
         for (let ad of record.ads) {
             ids.add(ad)
         }
@@ -350,8 +350,8 @@ function getAdIds(data) {
 
 function addToData(record) {
     record = convertRecord(record);
-    const found_record = data.find(item => item.str_utm === record.str_utm);
-    found_record ? found_record.count++ : data.push(record);
+    const found_record = fileData.find(item => item.str_utm === record.str_utm);
+    found_record ? found_record.count++ : fileData.push(record);
 }
 
 function parseCsv() {
@@ -361,7 +361,7 @@ function parseCsv() {
 }
 
 function addAdsToData(ads) {
-    for (let record of data) {
+    for (let record of fileData) {
         record.ads = [];
         if (record.utm_1 && record.utm_2) {
             for (let ad of ads) {
@@ -376,7 +376,7 @@ function addAdsToData(ads) {
 }
 
 function addSpentsToData(vk_stats) {
-    for (let record of data) {
+    for (let record of fileData) {
         record.spent = 0.0;
         if (record.utm_1 && record.utm_2) {
             for (let ad_stats of vk_stats) {
@@ -400,9 +400,8 @@ function removeAdsFromData(data) {
     }
 }
 
-function addCplToData(data) {
-    // noinspection JSUnusedAssignment
-    data = data.map(record => {
+function addCplToData() {
+    fileData = fileData.map(record => {
         if (record.utm_1 && record.utm_2) {
             record.cpl = +(record.spent / record.count).toFixed(2);
         } else
@@ -471,7 +470,7 @@ function initTable() {
                 "sortDescending": ": активировать для сортировки столбца по убыванию"
             }
         },
-        data: data,
+        data: fileData,
         columnDefs: [
             {targets: '_all', className: 'dt-center'},
             {targets: [2, 3, 4], searchable: false}
@@ -526,7 +525,7 @@ function getCampaigns() {
 }
 
 function addCampaignsToData(campaigns) {
-    for (let record of data) {
+    for (let record of fileData) {
         record.campaigns = [];
         if (record.utm_1 && record.utm_2) {
             for (let campaign of campaigns) {
@@ -537,22 +536,23 @@ function addCampaignsToData(campaigns) {
     }
 }
 
-function getCampaignIds(data) {
+function getCampaignIds(fileData) {
     let ids = new Set();
-    for (let record of data)
+    for (let record of fileData)
         for (let campaign of record.campaigns)
             ids.add(campaign);
     return [...ids];
 }
 
-function removeCampaigns(data) {
-    // noinspection JSUnusedAssignment
-    data = data.map(record => record.campaigns = undefined);
+function removeCampaigns() {
+    for (let record of fileData) {
+        record.campaigns = undefined;
+    }
 }
 
 function countSummaryInfo() {
-    const leads = data.reduce((accumulator, record) => accumulator + record.count, 0);
-    const spents = +data.reduce(
+    const leads = fileData.reduce((accumulator, record) => accumulator + record.count, 0);
+    const spents = +fileData.reduce(
         (accumulator, record) => accumulator + record.spent,
         0).toFixed(2);
     const cpl = +(spents / leads).toFixed(2);
@@ -582,12 +582,12 @@ function work() {
     getCampaigns()
         .then(campaigns => {
             addCampaignsToData(campaigns);
-            return getAds(getCampaignIds(data));
+            return getAds(getCampaignIds(fileData));
         })
         .then(ads => {
             addAdsToData(ads);
-            removeCampaigns(data);
-            const adIds = getAdIds(data);
+            removeCampaigns();
+            const adIds = getAdIds();
             if (!adIds.length) {
                 showErrorAlert({
                     text: "Нет объявлений, подходящих под условия.\n" +
@@ -600,8 +600,8 @@ function work() {
         })
         .then(res => {
             addSpentsToData(res);
-            removeAdsFromData(data);
-            addCplToData(data);
+            removeAdsFromData(fileData);
+            addCplToData();
             return removeLoader();
         })
         .then(() => {
