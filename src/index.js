@@ -13,26 +13,46 @@ let file_content = '';
 let fileData = [];
 let request_time = 0;
 let license_checked = false;
-let legal;
-const legal_user_ids = getLegalUserIds();
+let user;
+const legal_users = getLegalUsers();
 const connect_dev_link = 'https://vk.me/dimadk24';
 let adAccounts = [];
 let agencyClient;
 let statsRange;
 let calendarInput;
 
-function getLegalUserIds() {
-    const user_ids = [['1', '5', '9', '2', '0', '4', '0', '9', '8'],
-        ['8', '3', '8', '1', '4', '3', '7', '5']];
-    return user_ids.map(convertLegalUserId);
+function getLegalUsers() {
+    let users = [
+        {
+            id: ['1', '5', '9', '2', '0', '4', '0', '9', '8'],
+            expireTime: 0
+        },
+        {
+            id: ['8', '3', '8', '1', '4', '3', '7', '5'],
+            expireTime: 0
+        }
+    ];
+    return users
+        .map(setIsHasAccess)
+        .map(convertLegalUserId);
 }
 
-function convertLegalUserId(numbers_array) {
+function setIsHasAccess(user) {
+    const foreverAccess = user.expireTime === 0;
+    const expireTime = new Date(user.expireTime * 1000).getTime();
+    const nowTime = new Date().getTime();
+    user.hasAccess = foreverAccess || nowTime < expireTime;
+    return user;
+
+}
+
+function convertLegalUserId(user) {
     let id = '';
-    for (let number of numbers_array) {
+    for (let number of user.id) {
         id += number;
     }
-    return +id;
+    user.id = +id;
+    return user;
 }
 
 function getErrorText(error_code) {
@@ -106,20 +126,37 @@ function getUserVkData() {
 }
 
 function showBuyAlert() {
-    let text = document.createElement('div');
-    text.innerHTML = '<p>Опробуй ее бесплатно перед покупкой!</p>' +
+    const title = 'Упс, эта программа платная';
+    const html = '<p>Опробуй ее бесплатно перед покупкой!</p>' +
         '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a> и получи</p>' +
         '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>';
+    const ctaText = 'Получить';
+    baseShowLicenseAlert(title, html, ctaText);
+}
+
+function showLicenseExpiredAlert() {
+    const title = 'Упс, тестовый период закончился';
+    const html = '<p>Понравилась программа?</p>' +
+        '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a></p>' +
+        '<p>Купи вечную лицензию</p>' +
+        '<p>И пользуйся программой всегда!</p>';
+    const ctaButton = 'Написать';
+    baseShowLicenseAlert(title, html, ctaButton);
+}
+
+function baseShowLicenseAlert(title, html, ctaText) {
+    let text = document.createElement('div');
+    text.innerHTML = html;
     swal({
         icon: 'warning',
-        title: 'Упс, эта программа платная',
+        title: title,
         content: {
             element: text
         },
         button: {
-            text: 'Получить',
+            text: ctaText,
             value: true,
-            className: 'get-free-trial-button',
+            className: 'cta-button',
             closeModal: false
         }
     }).then(value => {
@@ -131,10 +168,12 @@ function showBuyAlert() {
 function verifyLicense() {
     getUserVkData()
         .then(data => {
-            const user_vk_id = data.uid || data.id;
-            legal = legal_user_ids.includes(user_vk_id);
-            if (!legal)
+            const user_vk_id = data.id;
+            user = legal_users.find(user => user.id === user_vk_id) || false;
+            if (!user)
                 showBuyAlert();
+            else if (!user.hasAccess)
+                showLicenseExpiredAlert();
             license_checked = true;
         });
 }
@@ -167,11 +206,13 @@ function onStart() {
         showErrorAlert({text: error});
     else {
         if (license_checked) {
-            if (!legal)
+            if (!user)
                 showBuyAlert();
+            else if (!user.hasAccess)
+                showLicenseExpiredAlert();
         } else
             verifyLicense();
-        if (legal)
+        if (user && user.hasAccess)
             work();
     }
 }
