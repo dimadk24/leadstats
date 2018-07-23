@@ -7,7 +7,7 @@ import {Russian} from 'flatpickr/dist/l10n/ru'
 flatpickr.localize(Russian);
 
 const api_url = 'https://api.vk.com/method/';
-const api_version = 5.80;
+const api_version = "5.80";
 let ad_cabinet_id = 0;
 let file_content = '';
 let fileData = [];
@@ -59,7 +59,7 @@ function getErrorText(error_code) {
 function vk(options) {
     let data = options.data || {};
     data.access_token = access_token;
-    data.version = api_version;
+    data.v = api_version;
     return new Promise((resolve, reject) => {
         const now = Date.now();
         const difference = now - request_time;
@@ -338,16 +338,6 @@ function getAdsStats(ads) {
     });
 }
 
-function getAdIds() {
-    let ids = new Set();
-    for (let record of fileData) {
-        for (let ad of record.ads) {
-            ids.add(ad)
-        }
-    }
-    return [...ids];
-}
-
 function addToData(record) {
     record = convertRecord(record);
     const found_record = fileData.find(item => item.str_utm === record.str_utm);
@@ -358,56 +348,6 @@ function parseCsv() {
     // noinspection JSUnresolvedFunction
     const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
     csv.forEach(addToData);
-}
-
-function addAdsToData(ads) {
-    for (let record of fileData) {
-        record.ads = [];
-        if (record.utm_1 && record.utm_2) {
-            for (let ad of ads) {
-                if (record.campaigns.includes(ad.campaign_id) &&
-                    ad.name.includes(record.str_utm)
-                ) {
-                    record.ads.push(parseInt(ad.id));
-                }
-            }
-        }
-    }
-}
-
-function addSpentsToData(vk_stats) {
-    for (let record of fileData) {
-        record.spent = 0.0;
-        if (record.utm_1 && record.utm_2) {
-            for (let ad_stats of vk_stats) {
-                if (record.ads.includes(ad_stats.id)) {
-                    let spent = 0.0;
-                    if (ad_stats.stats.length)
-                        for (let stat of ad_stats.stats) {
-                            spent += parseFloat(stat.spent || 0);
-                        }
-                    record.spent += spent;
-                }
-            }
-            record.spent = +record.spent.toFixed(2);
-        }
-    }
-}
-
-function removeAdsFromData(data) {
-    for (let record of data) {
-        record.ads = undefined;
-    }
-}
-
-function addCplToData() {
-    fileData = fileData.map(record => {
-        if (record.utm_1 && record.utm_2) {
-            record.cpl = +(record.spent / record.count).toFixed(2);
-        } else
-            record.cpl = 0;
-        return record
-    });
 }
 
 function addLoader(elem) {
@@ -442,7 +382,7 @@ function removeLoader() {
     })
 }
 
-function initTable() {
+function initTable(ads) {
     const table = "<table id='data-table' class='display'><thead><tr>" +
         "<th>UTM 1</th><th>UTM 2</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
         "</tr></thead><tbody></tbody></table>";
@@ -470,7 +410,8 @@ function initTable() {
                 "sortDescending": ": активировать для сортировки столбца по убыванию"
             }
         },
-        data: fileData,
+        pageLength: 50,
+        data: ads,
         columnDefs: [
             {targets: '_all', className: 'dt-center'},
             {targets: [2, 3, 4], searchable: false}
@@ -478,7 +419,7 @@ function initTable() {
         columns: [
             {data: 'utm_1'},
             {data: 'utm_2'},
-            {data: 'count'},
+            {data: 'leads'},
             {data: 'spent'},
             {data: 'cpl'}
         ]
@@ -524,38 +465,12 @@ function getCampaigns() {
     );
 }
 
-function addCampaignsToData(campaigns) {
-    for (let record of fileData) {
-        record.campaigns = [];
-        if (record.utm_1 && record.utm_2) {
-            for (let campaign of campaigns) {
-                if (campaign.name.includes(record.utm_1))
-                    record.campaigns.push(campaign.id);
-            }
-        }
-    }
-}
-
-function getCampaignIds(fileData) {
-    let ids = new Set();
-    for (let record of fileData)
-        for (let campaign of record.campaigns)
-            ids.add(campaign);
-    return [...ids];
-}
-
-function removeCampaigns() {
-    for (let record of fileData) {
-        record.campaigns = undefined;
-    }
-}
-
-function countSummaryInfo() {
-    const leads = fileData.reduce((accumulator, record) => accumulator + record.count, 0);
-    const spents = +fileData.reduce(
-        (accumulator, record) => accumulator + record.spent,
+function countSummaryInfo(ads) {
+    const leads = ads.reduce((accumulator, ad) => accumulator + ad.leads, 0);
+    const spents = +ads.reduce(
+        (accumulator, ad) => accumulator + ad.spent,
         0).toFixed(2);
-    const cpl = +(spents / leads).toFixed(2);
+    const cpl = countCpl(leads, spents);
     return {leads, spents, cpl};
 }
 
@@ -570,45 +485,368 @@ function appendSummaryText(text) {
     $('main').append(wrapper);
 }
 
-function addSummaryText() {
-    const {leads, spents, cpl} = countSummaryInfo();
+function addSummaryText(ads) {
+    const {leads, spents, cpl} = countSummaryInfo(ads);
     const text = createSummaryText(leads, spents, cpl);
     appendSummaryText(text);
+}
+
+function getAdsLinks() {
+    let data = {
+        account_id: ad_cabinet_id,
+        include_deleted: 0,
+    };
+    if (agencyClient)
+        data.client_id = agencyClient;
+    return new Promise(
+        (resolve, reject) => vk({
+            method: 'ads.getAdsLayout',
+            data: data
+        })
+            .then(res => {
+                res = res.map(item => {
+                    return {
+                        id: parseInt(item.id),
+                        link: item.link_url
+                    }
+                });
+                resolve(res);
+            })
+    );
+}
+
+function appendPostIdToAd(ad) {
+    const searchElement = 'vk.com/wall';
+    ad.postId = ad.link.slice(ad.link.indexOf(searchElement) + searchElement.length);
+    return ad;
+}
+
+function getAdsPosts(ads) {
+    let i = 0;
+    const step = 100;
+    let resultPosts = [];
+    return new Promise(resolve => {
+        let promises = [];
+        do {
+            let partAds = ads.slice(i, i + step);
+            let strPosts = partAds.reduce(
+                (accumulator, currentAd) => accumulator + currentAd.postId + ',',
+                '');
+            strPosts = strPosts.slice(0, -1);
+            promises.push(
+                vk({
+                    method: 'wall.getById',
+                    data: {posts: strPosts}
+                })
+            );
+            i += step;
+        } while (i < ads.length);
+        Promise.all(promises)
+            .then(res => {
+                for (let promisePosts of res)
+                    resultPosts.push(...promisePosts);
+                resolve(resultPosts);
+            });
+    });
+}
+
+function removeUselessPostStuff(post) {
+    return {
+        id: `${post.owner_id}_${post.id}`,
+        text: post.text,
+        attachments: post.attachments
+    };
+}
+
+function attachmentsIncludesLink(post) {
+    let link = false;
+    if (!post.attachments)
+        return link;
+    for (let attachment of post.attachments) {
+        if (attachment.type === 'link') {
+            link = attachment.link.url;
+            break;
+        }
+    }
+    return link;
+}
+
+function appendLinkFromAttachments(post) {
+    const link = attachmentsIncludesLink(post);
+    if (!link)
+        post.link = undefined;
+    else
+        post.link = link;
+    return post;
+}
+
+function findAndAppendAnketsLink(post) {
+    let re = /vk\.com\/app5619682_-\d+(#\d+(_[A-Za-z0-9_-]*)?)?/;
+    const match = re.exec(post.text) || (post.link && re.exec(post.link));
+    post.anketsLink = match[0];
+    return post;
+}
+
+function isPostIncludesAnketsLink(post) {
+    const basicAnketsLink = 'vk.com/app5619682_';
+    return (
+        post.text.includes(basicAnketsLink) ||
+        (post.link && post.link.includes(basicAnketsLink))
+    );
+}
+
+function removeAttachments(post) {
+    post.attachments = undefined;
+    return post;
+}
+
+function removePostText(post) {
+    post.text = undefined;
+    return post;
+}
+
+function mergeAdsAndPosts(ads, posts) {
+    for (let ad of ads) {
+        ad.id = parseInt(ad.id);
+        let i = 0;
+        for (let post of posts) {
+            if (ad.postId === post.id) {
+                ad.anketsLink = post.anketsLink;
+                posts.splice(i, 1);
+                break;
+            }
+            i++;
+        }
+        if (!posts.length)
+            break;
+    }
+    return ads;
+}
+
+function adIncludesAnketsLink(ad) {
+    return Boolean(ad.anketsLink);
+}
+
+function sliceFromIndexOf(string, searchString) {
+    return string.slice(string.indexOf(searchString) + searchString.length);
+}
+
+function parseUtms(ad) {
+    if (ad.anketsLink.includes('#')) {
+        ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#');
+        [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 3);
+        ad.anketId = parseInt(ad.anketId);
+        if (ad.utms && ad.utms[0])
+            ad.utms[0] = ad.utms[0].replace(/^\D+/g, '');
+        ad.str_utm = '';
+        if (ad.utms.length)
+            for (let utm of ad.utms)
+                ad.str_utm += utm;
+    }
+    ad.anketsLink = undefined;
+    return ad;
+}
+
+function removeLinkAndPostId(ad) {
+    ad.link = undefined;
+    ad.postId = undefined;
+    return ad;
+}
+
+function getAnketId(ad) {
+    return ad.anketId;
+}
+
+function adHasAnketId(ad) {
+    return Boolean(ad.anketId);
+}
+
+function isPromotedPost(ad) {
+    return ad.link.includes('vk.com/wall-');
+}
+
+function showManyAnketsIdsAlert(...anketIds) {
+    $(document).on('click', '.inputGroup > input', onAnketIdRadioClicked);
+    let form = $('<form class="form"></form>');
+    for (let id of anketIds) {
+        let inputGroup = $('<div class="inputGroup"></div>');
+        const radioId = `radio${id}`;
+        let input = $(`<input>`, {
+            type: 'radio',
+            name: 'anketId',
+            value: id,
+            id: radioId,
+        });
+        let label = $(`<label for="${radioId}" class="ankets">${id}</label>`);
+        inputGroup.append(input, label);
+        form.append(inputGroup);
+    }
+    form.find('input').first().attr("checked", "checked");
+    const firstValue = form.find('input').first().val();
+    return swal({
+        title: 'В кабинете несколько Анкет.\n' +
+        'С какой из них я должен работать?',
+        icon: 'info',
+        content: form[0],
+        button: {
+            text: 'Выбрать',
+            visible: true,
+            className: 'anketIdChoose',
+            closeModal: true,
+            value: firstValue
+        }
+    });
+}
+
+function onAnketIdRadioClicked(e) {
+    const value = $(e.target).val();
+    swal.setActionValue(value);
+}
+
+function isAnketIdEqualsTo(ad, id) {
+    return ad.anketId === id;
+}
+
+function getIds(ads) {
+    let ids = new Set();
+    for (let ad of ads) {
+        ids.add(ad.id);
+    }
+    return [...ids];
+}
+
+function addSpentsToAds(ads, vk_stats) {
+    for (let ad of ads) {
+        ad.spent = 0.0;
+        for (let ad_stats of vk_stats) {
+            if (ad.id === ad_stats.id) {
+                for (let period of ad_stats.stats) {
+                    ad.spent += parseFloat(period.spent || 0);
+                }
+            }
+        }
+        ad.spent = +ad.spent.toFixed(2);
+    }
+    return ads;
+}
+
+function convertRecordToAd(record) {
+    const utms = [record.utm_1, record.utm_2];
+    return {
+        spent: 0.0,
+        str_utm: record.str_utm,
+        utms: utms,
+        leads: record.count
+    }
+}
+
+function addLeadsToAds(ads, fileData) {
+    for (let ad of ads) {
+        ad.leads = 0;
+        for (let record of fileData) {
+            if (ad.str_utm === record.str_utm) {
+                ad.leads += record.count;
+                record.addedToAds = true;
+            }
+        }
+    }
+    for (let record of fileData) {
+        if (!record.addedToAds) {
+            ads.push(convertRecordToAd(record));
+        }
+    }
+    return ads;
+}
+
+function removeAnketIdAndId(ad) {
+    ad.anketId = undefined;
+    ad.id = undefined;
+    return ad;
+}
+
+function countCpl(leads, spent) {
+    if (leads || !(leads || spent))
+        return spent ? +(spent / leads).toFixed(2) : 0;
+    return `>${spent}`
+}
+
+function addCplToAds(ads) {
+    ads = ads.map(ad => {
+        ad.cpl = countCpl(ad.leads, ad.spent);
+        return ad
+    });
+    return ads;
+}
+
+function convetUtmsArrayToFields(ad) {
+    ad.utm_1 = '';
+    ad.utm_2 = '';
+    if (ad.utms.length) {
+        ad.utm_1 = ad.utms[0];
+        ad.utm_2 = ad.utms[1];
+        ad.utms = undefined;
+    }
+    return ad;
 }
 
 function work() {
     showLoader();
     parseCsv();
-    getCampaigns()
-        .then(campaigns => {
-            addCampaignsToData(campaigns);
-            return getAds(getCampaignIds(fileData));
-        })
+    getAdsLinks()
         .then(ads => {
-            addAdsToData(ads);
-            removeCampaigns();
-            const adIds = getAdIds();
-            if (!adIds.length) {
-                showErrorAlert({
-                    text: "Нет объявлений, подходящих под условия.\n" +
-                    'Читай в ReadMe, как связываются объявления и лиды'
+            ads = ads
+                .filter(isPromotedPost)
+                .map(appendPostIdToAd);
+            getAdsPosts(ads)
+                .then(posts => {
+                    posts = posts
+                        .map(removeUselessPostStuff)
+                        .map(appendLinkFromAttachments)
+                        .map(removeAttachments)
+                        .filter(isPostIncludesAnketsLink)
+                        .map(findAndAppendAnketsLink)
+                        .map(removePostText);
+                    ads = mergeAdsAndPosts(ads, posts)
+                        .map(removeLinkAndPostId)
+                        .filter(adIncludesAnketsLink)
+                        .map(parseUtms)
+                        .filter(adHasAnketId);
+                    let anketIds = new Set(ads.map(getAnketId));
+                    if (anketIds.size > 1) {
+                        return new Promise(resolve =>
+                            showManyAnketsIdsAlert(...anketIds)
+                                .then(id => {
+                                    id = parseInt(id);
+                                    ads = ads.filter(ad => isAnketIdEqualsTo(ad, id));
+                                    resolve(ads);
+                                }));
+                    }
+                    return Promise.resolve(ads);
                 })
-                    .then(() => removeLoader());
-                throw new Error('No ads');
-            } else
-                return getAdsStats(adIds);
-        })
-        .then(res => {
-            addSpentsToData(res);
-            removeAdsFromData(fileData);
-            addCplToData();
-            return removeLoader();
-        })
-        .then(() => {
-            addSummaryText();
-            initTable();
-        })
-        .catch(err => console.error(err));
+                .then(ads => {
+                    const ids = getIds(ads);
+                    if (!ids.length) {
+                        showErrorAlert({
+                            text: "Нет объявлений с ссылкой на Анкеты"
+                        })
+                            .then(() => removeLoader());
+                        throw new Error('No ads');
+                    }
+                    return getAdsStats(ids)
+                })
+                .then(stats => {
+                    ads = addSpentsToAds(ads, stats)
+                        .map(removeAnketIdAndId);
+                    ads = addLeadsToAds(ads, fileData);
+                    ads = addCplToAds(ads);
+                    return removeLoader();
+                })
+                .then(() => {
+                    addSummaryText(ads);
+                    ads = ads.map(convetUtmsArrayToFields);
+                    initTable(ads);
+                });
+        }).catch(err => console.error(err));
 }
 
 function remove_header(text) {
