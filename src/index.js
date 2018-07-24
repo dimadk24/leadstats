@@ -599,7 +599,7 @@ function removeUselessPostStuff(post) {
     };
 }
 
-function attachmentsIncludesLink(post) {
+function attachmentLink(post) {
     let link = false;
     if (!post.attachments)
         return link;
@@ -613,7 +613,7 @@ function attachmentsIncludesLink(post) {
 }
 
 function appendLinkFromAttachments(post) {
-    const link = attachmentsIncludesLink(post);
+    const link = attachmentLink(post);
     if (!link)
         post.link = undefined;
     else
