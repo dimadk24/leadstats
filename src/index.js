@@ -43,7 +43,6 @@ function setIsHasAccess(user) {
     const nowTime = new Date().getTime();
     user.hasAccess = foreverAccess || nowTime < expireTime;
     return user;
-
 }
 
 function convertLegalUserId(user) {
@@ -323,7 +322,7 @@ function initSelect() {
 }
 
 function removeShit(str) {
-    return str.includes('&') ? str.split('&', 1)[0] : str;
+    return str && str.includes('&') ? str.split('&', 1)[0] : str;
 }
 
 function getAds(campaigns) {
@@ -342,9 +341,10 @@ function getAds(campaigns) {
 
 function convertRecord(obj) {
     let new_obj = {};
-    new_obj.utm_1 = removeShit(obj.utm_1).replace(/^\D+/g, '');
+    new_obj.utm_1 = removeShit(obj.utm_1);
     new_obj.utm_2 = removeShit(obj.utm_2);
-    new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2;
+    new_obj.utm_3 = removeShit(obj.utm_3);
+    new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2 + new_obj.utm_3;
     new_obj.count = 1;
     return new_obj;
 }
@@ -425,7 +425,7 @@ function removeLoader() {
 
 function initTable(ads) {
     const table = "<table id='data-table' class='display'><thead><tr>" +
-        "<th>UTM 1</th><th>UTM 2</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
+        "<th>UTM 1</th><th>UTM 2</th><th>UTM 3</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
         "</tr></thead><tbody></tbody></table>";
     $('main').append(table);
     $('#data-table').DataTable({
@@ -460,6 +460,7 @@ function initTable(ads) {
         columns: [
             {data: 'utm_1'},
             {data: 'utm_2'},
+            {data: 'utm_3'},
             {data: 'leads'},
             {data: 'spent'},
             {data: 'cpl'}
@@ -675,10 +676,10 @@ function sliceFromIndexOf(string, searchString) {
 function parseUtms(ad) {
     if (ad.anketsLink.includes('#')) {
         ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#');
-        [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 3);
+        [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 4);
         ad.anketId = parseInt(ad.anketId);
         if (ad.utms && ad.utms[0])
-            ad.utms[0] = ad.utms[0].replace(/^\D+/g, '');
+            ad.utms[0] = ad.utms[0];
         ad.str_utm = '';
         if (ad.utms.length)
             for (let utm of ad.utms)
@@ -822,12 +823,28 @@ function addCplToAds(ads) {
 function convetUtmsArrayToFields(ad) {
     ad.utm_1 = '';
     ad.utm_2 = '';
+    ad.utm_3 = '';
     if (ad.utms.length) {
-        ad.utm_1 = ad.utms[0];
-        ad.utm_2 = ad.utms[1];
+        ad.utm_1 = ad.utms[0] || '';
+        ad.utm_2 = ad.utms[1] || '';
+        ad.utm_3 = ad.utms[2] || '';
         ad.utms = undefined;
     }
     return ad;
+}
+
+function mergeDuplicates(ads) {
+    let newAds = [];
+    let i = 0;
+    for (let ad of ads) {
+        const alreadyExistingItem = newAds.find(item => ad.str_utm === item.str_utm);
+        if (!alreadyExistingItem)
+            newAds.push(ad);
+        else
+            alreadyExistingItem.spent += ad.spent;
+        i++;
+    }
+    return newAds;
 }
 
 function work() {
@@ -878,6 +895,7 @@ function work() {
                 .then(stats => {
                     ads = addSpentsToAds(ads, stats)
                         .map(removeAnketIdAndId);
+                    ads = mergeDuplicates(ads);
                     ads = addLeadsToAds(ads, fileData);
                     ads = addCplToAds(ads);
                     return removeLoader();
