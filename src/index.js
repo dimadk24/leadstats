@@ -435,7 +435,7 @@ function removeLoader() {
 
 function initTable(ads) {
     const table =
-        "<table id='data-table' class='display'><thead><tr>" +
+        '<table id="data-table" class="display"><thead><tr>' +
         '<th>UTM 1</th><th>UTM 2</th><th>UTM 3</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>' +
         '</tr></thead><tbody></tbody></table>';
     $('main').append(table);
