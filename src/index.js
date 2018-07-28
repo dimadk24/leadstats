@@ -2,12 +2,12 @@ import CSV from 'comma-separated-values/csv';
 import catta from 'catta';
 import swal from 'sweetalert';
 import flatpickr from 'flatpickr';
-import {Russian} from 'flatpickr/dist/l10n/ru'
+import {Russian} from 'flatpickr/dist/l10n/ru';
 
 flatpickr.localize(Russian);
 
 const api_url = 'https://api.vk.com/method/';
-const api_version = "5.80";
+const api_version = '5.80';
 let ad_cabinet_id = 0;
 let file_content = '';
 let fileData = [];
@@ -30,20 +30,21 @@ function getLegalUsers() {
         {
             id: ['8', '3', '8', '1', '4', '3', '7', '5'],
             expireTime: 0
-        }, {
+        },
+        {
             id: ['2', '5', '9', '1', '8', '6', '1', '6', '2'],
             expireTime: 1534150800
-        }, {
+        },
+        {
             id: ['2', '1', '2', '0', '3', '9', '1', '0', '0'],
             expireTime: 1534150800
-        }, {
+        },
+        {
             id: ['3', '4', '6', '0', '4', '5', '5', '1', '7'],
             expireTime: 1534150800
         }
     ];
-    return users
-        .map(setIsHasAccess)
-        .map(convertLegalUserId);
+    return users.map(setIsHasAccess).map(convertLegalUserId);
 }
 
 function setIsHasAccess(user) {
@@ -66,7 +67,8 @@ function convertLegalUserId(user) {
 function getErrorText(error_code) {
     const errors = {
         1: 'Неизвестная для ВК ошибка. Попробуй позже',
-        5: 'Авторизация не удалась, обнови токен доступа.\n' +
+        5:
+            'Авторизация не удалась, обнови токен доступа.\n' +
             'Как это сделать читай в ReadMe',
         6: 'Слишком много запросов в секунду',
         7: 'Нет прав для выполнения данного действия',
@@ -98,12 +100,14 @@ function vk(options) {
             request_time = now;
             // noinspection JSUnresolvedFunction
             catta({
-                type: 'jsonp', timeout: 2,
-                url: api_url + options.method, data: data,
-            })
-                .then(res => {
+                type: 'jsonp',
+                timeout: 2,
+                url: api_url + options.method,
+                data: data
+            }).then(
+                (res) => {
                     if (res.response) {
-                        resolve(res.response)
+                        resolve(res.response);
                     } else {
                         const error_code = res.error.error_code;
                         const error_message = res.error.error_msg;
@@ -115,27 +119,33 @@ function vk(options) {
                         console.error(res.error);
                         throw new Error(`#${error_code}: ${error_message}`);
                     }
-                }, err => {
+                },
+                (err) => {
                     showErrorAlert({
-                        text: 'Сетевая ошибка.\n' +
+                        text:
+                            'Сетевая ошибка.\n' +
                             'Проверь соединие с Интернетом и обнови страницу'
                     });
                     console.log(err);
                     reject(err);
-                })
+                }
+            );
         }
     });
 }
 
 function getUserVkData() {
-    return new Promise(resolve => vk({
-        method: 'users.get'
-    }).then(res => resolve(res[0])));
+    return new Promise((resolve) =>
+        vk({
+            method: 'users.get'
+        }).then((res) => resolve(res[0]))
+    );
 }
 
 function showBuyAlert() {
     const title = 'Упс, эта программа платная';
-    const html = '<p>Опробуй ее бесплатно перед покупкой!</p>' +
+    const html =
+        '<p>Опробуй ее бесплатно перед покупкой!</p>' +
         '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a> и получи</p>' +
         '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>';
     const ctaText = 'Получить';
@@ -144,7 +154,8 @@ function showBuyAlert() {
 
 function showLicenseExpiredAlert() {
     const title = 'Упс, тестовый период закончился';
-    const html = '<p>Понравилась программа?</p>' +
+    const html =
+        '<p>Понравилась программа?</p>' +
         '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a></p>' +
         '<p>Купи вечную лицензию</p>' +
         '<p>И пользуйся программой всегда!</p>';
@@ -167,23 +178,19 @@ function baseShowLicenseAlert(title, html, ctaText) {
             className: 'cta-button',
             closeModal: false
         }
-    }).then(value => {
-        if (value)
-            window.location.href = connect_dev_link;
+    }).then((value) => {
+        if (value) window.location.href = connect_dev_link;
     });
 }
 
 function verifyLicense() {
-    getUserVkData()
-        .then(data => {
-            const user_vk_id = data.id;
-            user = legal_users.find(user => user.id === user_vk_id) || false;
-            if (!user)
-                showBuyAlert();
-            else if (!user.hasAccess)
-                showLicenseExpiredAlert();
-            license_checked = true;
-        });
+    getUserVkData().then((data) => {
+        const user_vk_id = data.id;
+        user = legal_users.find((user) => user.id === user_vk_id) || false;
+        if (!user) showBuyAlert();
+        else if (!user.hasAccess) showLicenseExpiredAlert();
+        license_checked = true;
+    });
 }
 
 function initCalendars() {
@@ -195,8 +202,7 @@ function initCalendars() {
 
 function checkInputs() {
     let error;
-    if (!ad_cabinet_id)
-        error = 'Не выбран кабинет.\nВыбери его сверху';
+    if (!ad_cabinet_id) error = 'Не выбран кабинет.\nВыбери его сверху';
     else if (!file_content)
         error = 'Не выбран файл от Анкет.\nПеретащи или выбери его';
     return error;
@@ -210,18 +216,13 @@ function getDatesRange() {
 function onStart() {
     statsRange = getDatesRange();
     const error = checkInputs();
-    if (error)
-        showErrorAlert({text: error});
+    if (error) showErrorAlert({text: error});
     else {
         if (license_checked) {
-            if (!user)
-                showBuyAlert();
-            else if (!user.hasAccess)
-                showLicenseExpiredAlert();
-        } else
-            verifyLicense();
-        if (user && user.hasAccess)
-            work();
+            if (!user) showBuyAlert();
+            else if (!user.hasAccess) showLicenseExpiredAlert();
+        } else verifyLicense();
+        if (user && user.hasAccess) work();
     }
 }
 
@@ -234,33 +235,40 @@ function onLoad() {
 }
 
 function convertCabinetsToOptions(array) {
-    return array.map(item => {
-        return {name: item.account_name, id: item.account_id}
+    return array.map((item) => {
+        return {name: item.account_name, id: item.account_id};
     });
 }
 
 function addCabinetsToSelect(array, select) {
     let optionArray = convertCabinetsToOptions(array);
     if (optionArray.length === 0)
-        optionArray.push({name: 'У тебя нет активных рекламных кабинетов :(', id: 0});
+        optionArray.push({
+            name: 'У тебя нет активных рекламных кабинетов :(',
+            id: 0
+        });
     addItemsToSelect(optionArray, select);
 }
 
 function addItemsToSelect(array, select) {
-    const options = array.map(item => new Option(item.name, item.id, false, false));
+    const options = array.map(
+        (item) => new Option(item.name, item.id, false, false)
+    );
     select.append(...options).trigger('change');
 }
 
 function filterCabinets(array) {
-    array = array.filter(item =>
-        item.account_status && ['admin', 'manager'].includes(item.access_role)
+    array = array.filter(
+        (item) =>
+            item.account_status &&
+            ['admin', 'manager'].includes(item.access_role)
     );
     return array;
 }
 
 function setAdAccounts(array) {
-    adAccounts = array.map(item => {
-        return {id: item.account_id, type: item.account_type}
+    adAccounts = array.map((item) => {
+        return {id: item.account_id, type: item.account_type};
     });
 }
 
@@ -276,31 +284,31 @@ function addPlaceholderOption() {
 }
 
 function loadSelectData() {
-    vk({method: 'ads.getAccounts'})
-        .then(accounts => {
-            removePlaceholderOption();
-            accounts = filterCabinets(accounts);
-            setAdAccounts(accounts);
-            addCabinetsToSelect(accounts, $('select#ad-acc-select'));
-        });
+    vk({method: 'ads.getAccounts'}).then((accounts) => {
+        removePlaceholderOption();
+        accounts = filterCabinets(accounts);
+        setAdAccounts(accounts);
+        addCabinetsToSelect(accounts, $('select#ad-acc-select'));
+    });
 }
 
 function cabinetIsAgency(cabinet_id) {
-    const cabinet_obj = adAccounts.find(acc => acc.id === parseInt(cabinet_id));
-    return cabinet_obj.type === 'agency'
+    const cabinet_obj = adAccounts.find(
+        (acc) => acc.id === parseInt(cabinet_id)
+    );
+    return cabinet_obj.type === 'agency';
 }
 
 function removeUselessAgencyClientStuff(item) {
-    return {name: item.name, id: item.id}
+    return {name: item.name, id: item.id};
 }
 
 function getAgencyClients(accountId) {
-    return new Promise(
-        resolve => vk({
+    return new Promise((resolve) =>
+        vk({
             method: 'ads.getClients',
             data: {account_id: accountId}
-        })
-            .then(res => resolve(res.map(removeUselessAgencyClientStuff)))
+        }).then((res) => resolve(res.map(removeUselessAgencyClientStuff)))
     );
 }
 
@@ -309,24 +317,27 @@ function onCabinetSelect(e, select) {
     if (cabinetIsAgency(ad_cabinet_id)) {
         select.html('');
         addPlaceholderOption();
-        getAgencyClients(ad_cabinet_id)
-            .then(clients => {
-                select.off('select2:select');
-                $('label[for="ad-acc-select"]').html('Выбери клиента агентского кабинета:');
-                removePlaceholderOption();
-                addItemsToSelect(clients, select);
-                if (clients.length === 1)
-                    agencyClient = clients[0].id;
-                else
-                    select.on('select2:select', e => agencyClient = e.params.data.id);
-            });
+        getAgencyClients(ad_cabinet_id).then((clients) => {
+            select.off('select2:select');
+            $('label[for="ad-acc-select"]').html(
+                'Выбери клиента агентского кабинета:'
+            );
+            removePlaceholderOption();
+            addItemsToSelect(clients, select);
+            if (clients.length === 1) agencyClient = clients[0].id;
+            else
+                select.on(
+                    'select2:select',
+                    (e) => (agencyClient = e.params.data.id)
+                );
+        });
     }
 }
 
 function initSelect() {
     const select = $('select#ad-acc-select');
     // noinspection JSUnresolvedFunction
-    select.select2({placeholder: "Выбрать", language: "ru"});
+    select.select2({placeholder: 'Выбрать', language: 'ru'});
     loadSelectData();
     select.on('select2:select', (e) => onCabinetSelect(e, select));
 }
@@ -346,14 +357,12 @@ function convertRecord(obj) {
 }
 
 function formatDate4VK(dateObj) {
-    return flatpickr.formatDate(dateObj, "Y-m-d");
+    return flatpickr.formatDate(dateObj, 'Y-m-d');
 }
 
 function convertDatesRange4VK(dateRange) {
-    if (dateRange.length === 0)
-        return [0, 0];
-    else
-        return dateRange.map(date => formatDate4VK(date));
+    if (dateRange.length === 0) return [0, 0];
+    else return dateRange.map((date) => formatDate4VK(date));
 }
 
 function getAdsStats(ads) {
@@ -365,10 +374,9 @@ function getAdsStats(ads) {
         ids: JSON.stringify(ads),
         period: period,
         date_from: vkStatsRange[0],
-        date_to: vkStatsRange[1],
+        date_to: vkStatsRange[1]
     };
-    if (agencyClient)
-        data.client_id = agencyClient;
+    if (agencyClient) data.client_id = agencyClient;
     return vk({
         method: 'ads.getStatistics',
         data: data
@@ -377,13 +385,18 @@ function getAdsStats(ads) {
 
 function addToData(record) {
     record = convertRecord(record);
-    const found_record = fileData.find(item => item.str_utm === record.str_utm);
+    const found_record = fileData.find(
+        (item) => item.str_utm === record.str_utm
+    );
     found_record ? found_record.count++ : fileData.push(record);
 }
 
 function parseCsv() {
     // noinspection JSUnresolvedFunction
-    const csv = new CSV(remove_header(file_content), {header: true, cast: false}).parse();
+    const csv = new CSV(remove_header(file_content), {
+        header: true,
+        cast: false
+    }).parse();
     csv.forEach(addToData);
 }
 
@@ -392,7 +405,8 @@ function addLoader(elem) {
     let loading = $('<div class="sk-circle"></div>');
     let inner_html = '';
     for (let i = 1; i <= 12; i++) {
-        inner_html += '<div class="sk-circle' + i.toString() + ' sk-child"></div>'
+        inner_html +=
+            '<div class="sk-circle' + i.toString() + ' sk-child"></div>';
     }
     loading.html(inner_html);
     wrapper.html(loading);
@@ -416,35 +430,38 @@ function removeLoader() {
             main.empty();
             resolve();
         });
-    })
+    });
 }
 
 function initTable(ads) {
-    const table = "<table id='data-table' class='display'><thead><tr>" +
-        "<th>UTM 1</th><th>UTM 2</th><th>UTM 3</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>" +
-        "</tr></thead><tbody></tbody></table>";
+    const table =
+        "<table id='data-table' class='display'><thead><tr>" +
+        '<th>UTM 1</th><th>UTM 2</th><th>UTM 3</th><th>Количество лидов</th><th>Потрачено</th><th>CPL</th>' +
+        '</tr></thead><tbody></tbody></table>';
     $('main').append(table);
     $('#data-table').DataTable({
         language: {
-            "processing": "Подождите...",
-            "search": "Поиск:",
-            "lengthMenu": "Показать _MENU_ записей",
-            "info": "Записи с _START_ до _END_ из _TOTAL_ записей",
-            "infoEmpty": "Записи с 0 до 0 из 0 записей",
-            "infoFiltered": "(отфильтровано из _MAX_ записей)",
-            "infoPostFix": "",
-            "loadingRecords": "Загрузка записей...",
-            "zeroRecords": "Записи отсутствуют.",
-            "emptyTable": "В таблице отсутствуют данные",
-            "paginate": {
-                "first": "Первая",
-                "previous": "Предыдущая",
-                "next": "Следующая",
-                "last": "Последняя"
+            processing: 'Подождите...',
+            search: 'Поиск:',
+            lengthMenu: 'Показать _MENU_ записей',
+            info: 'Записи с _START_ до _END_ из _TOTAL_ записей',
+            infoEmpty: 'Записи с 0 до 0 из 0 записей',
+            infoFiltered: '(отфильтровано из _MAX_ записей)',
+            infoPostFix: '',
+            loadingRecords: 'Загрузка записей...',
+            zeroRecords: 'Записи отсутствуют.',
+            emptyTable: 'В таблице отсутствуют данные',
+            paginate: {
+                first: 'Первая',
+                previous: 'Предыдущая',
+                next: 'Следующая',
+                last: 'Последняя'
             },
-            "aria": {
-                "sortAscending": ": активировать для сортировки столбца по возрастанию",
-                "sortDescending": ": активировать для сортировки столбца по убыванию"
+            aria: {
+                sortAscending:
+                    ': активировать для сортировки столбца по возрастанию',
+                sortDescending:
+                    ': активировать для сортировки столбца по убыванию'
             }
         },
         pageLength: 50,
@@ -473,9 +490,9 @@ function showErrorAlert(options) {
 
 function countSummaryInfo(ads) {
     const leads = ads.reduce((accumulator, ad) => accumulator + ad.leads, 0);
-    const spents = +ads.reduce(
-        (accumulator, ad) => accumulator + ad.spent,
-        0).toFixed(2);
+    const spents = +ads
+        .reduce((accumulator, ad) => accumulator + ad.spent, 0)
+        .toFixed(2);
     const cpl = countCpl(leads, spents);
     return {leads, spents, cpl};
 }
@@ -500,30 +517,30 @@ function addSummaryText(ads) {
 function getAdsLinks() {
     let data = {
         account_id: ad_cabinet_id,
-        include_deleted: 0,
+        include_deleted: 0
     };
-    if (agencyClient)
-        data.client_id = agencyClient;
-    return new Promise(
-        resolve => vk({
+    if (agencyClient) data.client_id = agencyClient;
+    return new Promise((resolve) =>
+        vk({
             method: 'ads.getAdsLayout',
             data: data
+        }).then((res) => {
+            res = res.map((item) => {
+                return {
+                    id: parseInt(item.id),
+                    link: item.link_url
+                };
+            });
+            resolve(res);
         })
-            .then(res => {
-                res = res.map(item => {
-                    return {
-                        id: parseInt(item.id),
-                        link: item.link_url
-                    }
-                });
-                resolve(res);
-            })
     );
 }
 
 function appendPostIdToAd(ad) {
     const searchElement = 'vk.com/wall';
-    ad.postId = ad.link.slice(ad.link.indexOf(searchElement) + searchElement.length);
+    ad.postId = ad.link.slice(
+        ad.link.indexOf(searchElement) + searchElement.length
+    );
     return ad;
 }
 
@@ -531,13 +548,15 @@ function getAdsPosts(ads) {
     let i = 0;
     const step = 100;
     let resultPosts = [];
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         let promises = [];
         do {
             let partAds = ads.slice(i, i + step);
             let strPosts = partAds.reduce(
-                (accumulator, currentAd) => accumulator + currentAd.postId + ',',
-                '');
+                (accumulator, currentAd) =>
+                    accumulator + currentAd.postId + ',',
+                ''
+            );
             strPosts = strPosts.slice(0, -1);
             promises.push(
                 vk({
@@ -547,12 +566,10 @@ function getAdsPosts(ads) {
             );
             i += step;
         } while (i < ads.length);
-        Promise.all(promises)
-            .then(res => {
-                for (let promisePosts of res)
-                    resultPosts.push(...promisePosts);
-                resolve(resultPosts);
-            });
+        Promise.all(promises).then((res) => {
+            for (let promisePosts of res) resultPosts.push(...promisePosts);
+            resolve(resultPosts);
+        });
     });
 }
 
@@ -566,8 +583,7 @@ function removeUselessPostStuff(post) {
 
 function attachmentLink(post) {
     let link = false;
-    if (!post.attachments)
-        return link;
+    if (!post.attachments) return link;
     for (let attachment of post.attachments) {
         if (attachment.type === 'link') {
             link = attachment.link.url;
@@ -579,10 +595,8 @@ function attachmentLink(post) {
 
 function appendLinkFromAttachments(post) {
     const link = attachmentLink(post);
-    if (!link)
-        post.link = undefined;
-    else
-        post.link = link;
+    if (!link) post.link = undefined;
+    else post.link = link;
     return post;
 }
 
@@ -624,8 +638,7 @@ function mergeAdsAndPosts(ads, posts) {
             }
             i++;
         }
-        if (!posts.length)
-            break;
+        if (!posts.length) break;
     }
     return ads;
 }
@@ -644,12 +657,9 @@ function parseUtms(ad) {
         [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 4);
         // noinspection JSCheckFunctionSignatures
         ad.anketId = parseInt(ad.anketId);
-        if (ad.utms && ad.utms[0])
-            ad.utms[0] = ad.utms[0];
+        if (ad.utms && ad.utms[0]) ad.utms[0] = ad.utms[0];
         ad.str_utm = '';
-        if (ad.utms.length)
-            for (let utm of ad.utms)
-                ad.str_utm += utm;
+        if (ad.utms.length) for (let utm of ad.utms) ad.str_utm += utm;
     }
     ad.anketsLink = undefined;
     return ad;
@@ -684,16 +694,22 @@ function showManyAnketsIdsAlert(...anketIds) {
             type: 'radio',
             name: 'anketId',
             value: id,
-            id: radioId,
+            id: radioId
         });
         let label = $(`<label for="${radioId}" class="ankets">${id}</label>`);
         inputGroup.append(input, label);
         form.append(inputGroup);
     }
-    form.find('input').first().attr("checked", "checked");
-    const firstValue = form.find('input').first().val();
+    form.find('input')
+        .first()
+        .attr('checked', 'checked');
+    const firstValue = form
+        .find('input')
+        .first()
+        .val();
     return swal({
-        title: 'В кабинете несколько Анкет.\n' +
+        title:
+            'В кабинете несколько Анкет.\n' +
             'С какой из них я должен работать?',
         icon: 'info',
         content: form[0],
@@ -746,7 +762,7 @@ function convertRecordToAd(record) {
         str_utm: record.str_utm,
         utms: utms,
         leads: record.count
-    }
+    };
 }
 
 function addLeadsToAds(ads, fileData) {
@@ -776,13 +792,13 @@ function removeAnketIdAndId(ad) {
 function countCpl(leads, spent) {
     if (leads || !(leads || spent))
         return spent ? +(spent / leads).toFixed(2) : 0;
-    return `>${spent}`
+    return `>${spent}`;
 }
 
 function addCplToAds(ads) {
-    ads = ads.map(ad => {
+    ads = ads.map((ad) => {
         ad.cpl = countCpl(ad.leads, ad.spent);
-        return ad
+        return ad;
     });
     return ads;
 }
@@ -804,11 +820,11 @@ function mergeDuplicates(ads) {
     let newAds = [];
     let i = 0;
     for (let ad of ads) {
-        const alreadyExistingItem = newAds.find(item => ad.str_utm === item.str_utm);
-        if (!alreadyExistingItem)
-            newAds.push(ad);
-        else
-            alreadyExistingItem.spent += ad.spent;
+        const alreadyExistingItem = newAds.find(
+            (item) => ad.str_utm === item.str_utm
+        );
+        if (!alreadyExistingItem) newAds.push(ad);
+        else alreadyExistingItem.spent += ad.spent;
         i++;
     }
     return newAds;
@@ -818,12 +834,10 @@ function work() {
     showLoader();
     parseCsv();
     getAdsLinks()
-        .then(ads => {
-            ads = ads
-                .filter(isPromotedPost)
-                .map(appendPostIdToAd);
+        .then((ads) => {
+            ads = ads.filter(isPromotedPost).map(appendPostIdToAd);
             getAdsPosts(ads)
-                .then(posts => {
+                .then((posts) => {
                     posts = posts
                         .map(removeUselessPostStuff)
                         .map(appendLinkFromAttachments)
@@ -838,30 +852,30 @@ function work() {
                         .filter(adHasAnketId);
                     let anketIds = new Set(ads.map(getAnketId));
                     if (anketIds.size > 1) {
-                        return new Promise(resolve =>
-                            showManyAnketsIdsAlert(...anketIds)
-                                .then(id => {
-                                    id = parseInt(id);
-                                    ads = ads.filter(ad => isAnketIdEqualsTo(ad, id));
-                                    resolve(ads);
-                                }));
+                        return new Promise((resolve) =>
+                            showManyAnketsIdsAlert(...anketIds).then((id) => {
+                                id = parseInt(id);
+                                ads = ads.filter((ad) =>
+                                    isAnketIdEqualsTo(ad, id)
+                                );
+                                resolve(ads);
+                            })
+                        );
                     }
                     return Promise.resolve(ads);
                 })
-                .then(ads => {
+                .then((ads) => {
                     const ids = getIds(ads);
                     if (!ids.length) {
                         showErrorAlert({
-                            text: "Нет объявлений с ссылкой на Анкеты"
-                        })
-                            .then(() => removeLoader());
+                            text: 'Нет объявлений с ссылкой на Анкеты'
+                        }).then(() => removeLoader());
                         throw new Error('No ads');
                     }
-                    return getAdsStats(ids)
+                    return getAdsStats(ids);
                 })
-                .then(stats => {
-                    ads = addSpentsToAds(ads, stats)
-                        .map(removeAnketIdAndId);
+                .then((stats) => {
+                    ads = addSpentsToAds(ads, stats).map(removeAnketIdAndId);
                     ads = mergeDuplicates(ads);
                     ads = addLeadsToAds(ads, fileData);
                     ads = addCplToAds(ads);
@@ -872,21 +886,24 @@ function work() {
                     ads = ads.map(convetUtmsArrayToFields);
                     initTable(ads);
                 });
-        }).catch(err => console.error(err));
+        })
+        .catch((err) => console.error(err));
 }
 
 function remove_header(text) {
-    return text.split('\n\n')[1]
+    return text.split('\n\n')[1];
 }
 
 function readFile(file) {
     const reader = new FileReader();
-    reader.onload = e => file_content = e.target.result;
-    reader.readAsText(file, 'cp1251')
+    reader.onload = (e) => (file_content = e.target.result);
+    reader.readAsText(file, 'cp1251');
 }
 
 function check_file(file) {
-    return !file.name.endsWith('.csv') ? 'Неверный файл!\nУ него расширение не .csv' : '';
+    return !file.name.endsWith('.csv')
+        ? 'Неверный файл!\nУ него расширение не .csv'
+        : '';
 }
 
 function safe_check_file(file) {
@@ -922,17 +939,20 @@ function onFileInputChange() {
     $elem.removeClass(dropzone_hover_class);
     if (!this.files[0]) {
         removeDroppedClass($elem);
-    }
-    else {
+    } else {
         handleFileAndClasses($elem);
     }
 }
 
 function initDropzone() {
-    const dropzone = document.getElementById("dropzone");
-    dropzone.addEventListener("dragenter", () => dropzone.classList.add(dropzone_hover_class));
-    dropzone.addEventListener("dragleave", () => dropzone.classList.remove(dropzone_hover_class));
-    $('input.file-input')[0].addEventListener("change", onFileInputChange);
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragenter', () =>
+        dropzone.classList.add(dropzone_hover_class)
+    );
+    dropzone.addEventListener('dragleave', () =>
+        dropzone.classList.remove(dropzone_hover_class)
+    );
+    $('input.file-input')[0].addEventListener('change', onFileInputChange);
 }
 
 // noinspection JSCheckFunctionSignatures
