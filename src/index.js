@@ -325,6 +325,7 @@ function onCabinetSelect(e, select) {
 
 function initSelect() {
     const select = $('select#ad-acc-select');
+    // noinspection JSUnresolvedFunction
     select.select2({placeholder: "Выбрать", language: "ru"});
     loadSelectData();
     select.on('select2:select', (e) => onCabinetSelect(e, select));
@@ -673,6 +674,7 @@ function isPromotedPost(ad) {
 }
 
 function showManyAnketsIdsAlert(...anketIds) {
+    // noinspection JSCheckFunctionSignatures
     $(document).on('click', '.inputGroup > input', onAnketIdRadioClicked);
     let form = $('<form class="form"></form>');
     for (let id of anketIds) {
@@ -933,4 +935,5 @@ function initDropzone() {
     $('input.file-input')[0].addEventListener("change", onFileInputChange);
 }
 
+// noinspection JSCheckFunctionSignatures
 $(document).ready(onLoad);
