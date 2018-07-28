@@ -334,20 +334,6 @@ function removeShit(str) {
     return str && str.includes('&') ? str.split('&', 1)[0] : str;
 }
 
-function getAds(campaigns) {
-    const data = {
-        account_id: ad_cabinet_id,
-        campaign_ids: JSON.stringify(campaigns),
-        include_deleted: 0,
-    };
-    if (agencyClient)
-        data.client_id = agencyClient;
-    return vk({
-        method: 'ads.getAds',
-        data: data
-    });
-}
-
 function convertRecord(obj) {
     let new_obj = {};
     new_obj.utm_1 = removeShit(obj.utm_1);
@@ -484,38 +470,6 @@ function showErrorAlert(options) {
     return swal(options);
 }
 
-function removeUselessCampaignStuff(campaign) {
-    return {
-        id: campaign.id,
-        name: campaign.name
-    }
-}
-
-function filterCampaigns(campaigns) {
-    return campaigns.filter(
-        campaign => ['normal', 'promoted_posts'].includes(campaign.type)
-    );
-}
-
-function getCampaigns() {
-    let data = {
-        account_id: ad_cabinet_id,
-        include_deleted: 0,
-    };
-    if (agencyClient)
-        data.client_id = agencyClient;
-    return new Promise(
-        (resolve, reject) =>
-            vk({
-                method: 'ads.getCampaigns',
-                data: data
-            })
-                .then(res => {
-                    resolve(filterCampaigns(res).map(removeUselessCampaignStuff));
-                })
-    );
-}
-
 function countSummaryInfo(ads) {
     const leads = ads.reduce((accumulator, ad) => accumulator + ad.leads, 0);
     const spents = +ads.reduce(
@@ -550,7 +504,7 @@ function getAdsLinks() {
     if (agencyClient)
         data.client_id = agencyClient;
     return new Promise(
-        (resolve, reject) => vk({
+        resolve => vk({
             method: 'ads.getAdsLayout',
             data: data
         })
@@ -658,6 +612,7 @@ function removePostText(post) {
 
 function mergeAdsAndPosts(ads, posts) {
     for (let ad of ads) {
+        // noinspection JSCheckFunctionSignatures
         ad.id = parseInt(ad.id);
         let i = 0;
         for (let post of posts) {
@@ -686,6 +641,7 @@ function parseUtms(ad) {
     if (ad.anketsLink.includes('#')) {
         ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#');
         [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 4);
+        // noinspection JSCheckFunctionSignatures
         ad.anketId = parseInt(ad.anketId);
         if (ad.utms && ad.utms[0])
             ad.utms[0] = ad.utms[0];
