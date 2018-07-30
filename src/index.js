@@ -581,7 +581,7 @@ function removeUselessPostStuff(post) {
     };
 }
 
-function attachmentLink(post) {
+function getAttachmentsLink(post) {
     let link = false;
     if (!post.attachments) return link;
     for (let attachment of post.attachments) {
@@ -594,25 +594,44 @@ function attachmentLink(post) {
 }
 
 function appendLinkFromAttachments(post) {
-    const link = attachmentLink(post);
+    const link = getAttachmentsLink(post);
     if (!link) post.link = undefined;
     else post.link = link;
     return post;
 }
 
-function findAndAppendAnketsLink(post) {
-    let re = /vk\.com\/app5619682_-\d+(#\d+(_[A-Za-z0-9_-]*)?)?/;
-    const match = re.exec(post.text) || (post.link && re.exec(post.link));
-    post.anketsLink = match[0];
+function execResOnString(reArray, stringArray) {
+    for (const re of reArray) {
+        for (const string of stringArray) {
+            if (string) {
+                const match = re.exec(string);
+                if (match) return match;
+            }
+        }
+    }
+    return false;
+}
+
+function findAndAppendTargetLink(post) {
+    const anketsRe = /vk\.com\/app5619682_-\d+(#\d+(_[A-Za-z0-9_-]*)?)?/;
+    const vkCcRe = /vk\.cc\/[A-Za-z0-9_-]+/;
+    const res = [anketsRe, vkCcRe];
+    post.targetLink = execResOnString(res, [post.text, post.link])[0];
     return post;
 }
 
-function isPostIncludesAnketsLink(post) {
-    const basicAnketsLink = 'vk.com/app5619682_';
-    return (
-        post.text.includes(basicAnketsLink) ||
-        (post.link && post.link.includes(basicAnketsLink))
-    );
+function anyIncludesAny(strings, subStrings) {
+    for (const string of strings) {
+        for (const subStr of subStrings) {
+            if (string && subStr && string.includes(subStr)) return true;
+        }
+    }
+    return false;
+}
+
+function isPostIncludesTargetLinks(post) {
+    const basicLinks = ['vk.com/app5619682_', 'vk.cc'];
+    return anyIncludesAny([post.text, post.link], basicLinks);
 }
 
 function removeAttachments(post) {
@@ -632,7 +651,7 @@ function mergeAdsAndPosts(ads, posts) {
         let i = 0;
         for (let post of posts) {
             if (ad.postId === post.id) {
-                ad.anketsLink = post.anketsLink;
+                ad.anketsLink = post.targetLink;
                 posts.splice(i, 1);
                 break;
             }
@@ -830,6 +849,43 @@ function mergeDuplicates(ads) {
     return newAds;
 }
 
+function containsVkCcLink(posts) {
+    let links = [];
+    for (const post of posts) {
+        links.push(post.targetLink);
+    }
+    return anyIncludesAny(links, ['vk.cc/']);
+}
+
+function convertVkCcLinks(res) {
+    return {url: res.url, key: res.key};
+}
+
+function loadVkCcLinks() {
+    return new Promise((resolve) =>
+        vk({
+            method: 'utils.getLastShortenedLinks',
+            data: {
+                count: 100
+            }
+        }).then((res) => resolve(res.items.map(convertVkCcLinks)))
+    );
+}
+
+function resolveShortLinks(posts, shortLinks) {
+    for (const post of posts) {
+        const searchStr = 'vk.cc/';
+        const indexOfSearchStr = post.targetLink.indexOf(searchStr);
+        if (indexOfSearchStr !== -1) {
+            const key = post.targetLink.slice(
+                indexOfSearchStr + searchStr.length
+            );
+            post.targetLink = shortLinks.find((item) => item.key === key).url;
+        }
+    }
+    return posts;
+}
+
 function work() {
     showLoader();
     parseCsv();
@@ -842,9 +898,20 @@ function work() {
                         .map(removeUselessPostStuff)
                         .map(appendLinkFromAttachments)
                         .map(removeAttachments)
-                        .filter(isPostIncludesAnketsLink)
-                        .map(findAndAppendAnketsLink)
+                        .filter(isPostIncludesTargetLinks)
+                        .map(findAndAppendTargetLink)
                         .map(removePostText);
+                    if (containsVkCcLink(posts)) {
+                        return new Promise((resolve) => {
+                            loadVkCcLinks().then((shortLinks) => {
+                                posts = resolveShortLinks(posts, shortLinks);
+                                resolve(posts);
+                            });
+                        });
+                    }
+                    return Promise.resolve(posts);
+                })
+                .then((posts) => {
                     ads = mergeAdsAndPosts(ads, posts)
                         .map(removeLinkAndPostId)
                         .filter(adIncludesAnketsLink)
