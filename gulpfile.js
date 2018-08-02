@@ -13,19 +13,16 @@ gulp.task('move', () => {
     console.log('Successfully moved vendors')
 })
 
+// 'librar?' because normal way (library) node-blob unpacks
+// every file in the dir and break dir structure. This way it works
 const releaseFiles = ['librar?/**', 'index.html', 'Readme.txt', 'settings.js']
 const outputArchive = 'LeadStats.zip'
 
 function zipProject() {
-    // 'librar?' because normal way (library) node-blob unpacks
-    // every file in the dir and break dir structure. This way it works
-    return new Promise((resolve) =>
-        gulp
-            .src(releaseFiles)
-            .pipe(zip(outputArchive))
-            .pipe(gulp.dest('./'))
-            .on('end', resolve())
-    )
+    return gulp
+        .src(releaseFiles)
+        .pipe(zip(outputArchive))
+        .pipe(gulp.dest('./'))
 }
 
 const mockSettings = 'mock-settings.js'
@@ -43,8 +40,9 @@ function changeMockSettingsToReal() {
 
 gulp.task('zip', () => {
     changeSettingsToMock()
-    zipProject().then(() => {
-        changeMockSettingsToReal()
-        console.log('Successfully zipped project')
-    })
+    zipProject()
+})
+
+gulp.task('clean', () => {
+    changeMockSettingsToReal()
 })
