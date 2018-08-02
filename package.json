@@ -1,5 +1,5 @@
 {
-  "name": "ankety_and_ads_combiner",
+  "name": "leadstats",
   "version": "1.0.0",
   "description": "Awesome script",
   "private": true,
@@ -14,7 +14,7 @@
   },
   "author": "DimaDK",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/DimaDK24/ankety-adscombiner#readme",
+  "homepage": "https://bitbucket.org/DimaDK24/leadstats#readme",
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
