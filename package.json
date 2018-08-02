@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --env.mode=production",
-    "watch": "webpack --watch --env.mode=development"
+    "watch": "webpack --watch --env.mode=development",
+    "release": "gulp move zip"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,8 @@
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
+    "gulp": "^3.9.1",
+    "gulp-zip": "^4.2.0",
     "prettier": "1.13.7",
     "webpack": "^4.16.3",
     "webpack-cli": "^3.1.0"
@@ -27,6 +30,7 @@
     "catta": "^2.1.1",
     "comma-separated-values": "^3.6.4",
     "flatpickr": "^4.5.1",
+    "npm": "^6.3.0",
     "spinkit": "^1.2.5",
     "sweetalert": "^2.1.0"
   }
