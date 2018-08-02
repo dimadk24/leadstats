@@ -2,5 +2,6 @@
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 node_modules/
-dist/index.js
+dist/*.js
+dist/.git
 *.zip
