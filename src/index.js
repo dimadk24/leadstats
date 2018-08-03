@@ -672,9 +672,11 @@ function sliceFromIndexOf(string, searchString) {
 
 function parseUtms(ad) {
     if (ad.anketsLink.includes('#')) {
-        ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#');
-        [ad.anketId, ...ad.utms] = ad.anketsLink.split('_', 4)
+        ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#')
+        const [anketId, ...utms] = ad.anketsLink.split('_', 4)
         // noinspection JSCheckFunctionSignatures
+        ad.anketId = anketId
+        ad.utms = utms
         ad.anketId = parseInt(ad.anketId)
         if (ad.utms && ad.utms[0]) ad.utms[0] = ad.utms[0]
         ad.str_utm = ''
