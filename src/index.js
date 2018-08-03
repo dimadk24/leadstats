@@ -514,7 +514,7 @@ function countSummaryInfo(ads) {
 }
 
 function createSummaryText(leads, spents, cpl) {
-    return `лидов: ${leads}, потрачено ${spents} руб, средняя цена лида: ${cpl}`
+    return `лидов: ${leads}, потрачено ${spents} руб, средняя цена лида: ${cpl} руб`
 }
 
 function appendSummaryText(text) {
