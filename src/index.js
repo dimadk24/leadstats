@@ -42,6 +42,10 @@ function getLegalUsers() {
         {
             id: ['3', '4', '6', '0', '4', '5', '5', '1', '7'],
             expireTime: 1534150800
+        },
+        {
+            id: ['5', '3', '1', '8', '4', '2', '3', '4'],
+            expireTime: 1534593600
         }
     ]
     return users.map(setIsHasAccess).map(convertLegalUserId)
