@@ -2,7 +2,6 @@
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 node_modules/
-dist/*.js
-dist/.git*
+dist/
 library/vendors.js
 *.zip
