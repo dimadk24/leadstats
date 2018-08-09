@@ -15,7 +15,7 @@ let request_time = 0
 let license_checked = false
 let user
 const legal_users = getLegalUsers()
-const connect_dev_link = 'https://vk.me/dimadk24'
+const connect_dev_link = 'https://vk.me/smm_automation'
 let adAccounts = []
 let agencyClient
 let statsRange
@@ -162,7 +162,7 @@ function showBuyAlert() {
     const title = 'Упс, эта программа платная'
     const html =
         '<p>Опробуй ее бесплатно перед покупкой!</p>' +
-        '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a> и получи</p>' +
+        `<p>Напиши в <a href="${connect_dev_link}">паблик разработчика</a> и получи</p>` +
         '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>'
     const ctaText = 'Получить'
     baseShowLicenseAlert(title, html, ctaText)
@@ -172,7 +172,7 @@ function showLicenseExpiredAlert() {
     const title = 'Упс, тестовый период закончился'
     const html =
         '<p>Понравилась программа?</p>' +
-        '<p>Напиши <a href="https://vk.com/dimadk24">разработчику</a></p>' +
+        `<p>Напиши в <a href="${connect_dev_link}">паблик разработчика</a></p>` +
         '<p>Купи вечную лицензию</p>' +
         '<p>И пользуйся программой всегда!</p>'
     const ctaButton = 'Написать'
