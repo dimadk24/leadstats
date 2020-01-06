@@ -4,6 +4,9 @@ import catta from 'catta'
 import swal from 'sweetalert'
 import flatpickr from 'flatpickr'
 import { Russian } from 'flatpickr/dist/l10n/ru'
+import $ from 'jquery'
+import 'select2'
+import 'datatables.net-dt'
 
 flatpickr.localize(Russian)
 
