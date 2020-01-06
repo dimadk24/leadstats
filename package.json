@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://DimaDK24@bitbucket.org/DimaDK24/ankety-adscombiner.git"
+    "url": "git+https://github.com/DimaDK24/leadstats.git"
   },
-  "author": "DimaDK",
-  "license": "ISC",
-  "homepage": "https://bitbucket.org/DimaDK24/leadstats#readme",
+  "author": "Dima Krutolianov <DimaDK24>",
+  "license": "MIT",
+  "homepage": "https://github.com/DimaDK24/leadstats",
   "devDependencies": {
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
@@ -29,7 +29,6 @@
     "catta": "^2.1.1",
     "comma-separated-values": "^3.6.4",
     "flatpickr": "^4.5.1",
-    "npm": "^6.3.0",
     "spinkit": "^1.2.5",
     "sweetalert": "^2.1.0"
   }
