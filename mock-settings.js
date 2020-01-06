@@ -1,1 +1,0 @@
-window.access_token = ''
