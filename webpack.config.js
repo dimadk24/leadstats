@@ -1,6 +1,6 @@
 const path = require('path')
 
-let config = {
+const config = {
   entry: './src/index.js',
   output: {
     filename: '[name].js',

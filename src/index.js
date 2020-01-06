@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax,no-param-reassign,no-use-before-define */
 import CSV from 'comma-separated-values/csv'
 import catta from 'catta'
 import swal from 'sweetalert'
@@ -6,23 +7,42 @@ import { Russian } from 'flatpickr/dist/l10n/ru'
 
 flatpickr.localize(Russian)
 
-const api_url = 'https://api.vk.com/method/'
-const api_version = '5.80'
-let ad_cabinet_id = 0
-let file_content = ''
-let fileData = []
-let request_time = 0
-let license_checked = false
+const apiUrl = 'https://api.vk.com/method/'
+const apiVersion = '5.80'
+let adCabinetId = 0
+let fileContent = ''
+const fileData = []
+let requestTime = 0
+let licenceChecked = false
 let user
-const legal_users = getLegalUsers()
-const connect_dev_link = 'https://vk.me/smm_automation'
+const legalUsers = getLegalUsers()
+const connectDevLink = 'https://vk.me/smm_automation'
 let adAccounts = []
 let agencyClient
+
 let statsRange
+
 let calendarInput
 
+function setIsHasAccess(localUser) {
+  const foreverAccess = localUser.expireTime === 0
+  const expireTime = new Date(localUser.expireTime * 1000).getTime()
+  const nowTime = new Date().getTime()
+  localUser.hasAccess = foreverAccess || nowTime < expireTime
+  return localUser
+}
+
+function convertLegalUserId(localUser) {
+  let id = ''
+  for (const number of localUser.id) {
+    id += number
+  }
+  localUser.id = +id
+  return localUser
+}
+
 function getLegalUsers() {
-  let users = [
+  const users = [
     {
       id: ['1', '5', '9', '2', '0', '4', '0', '9', '8'],
       expireTime: 0,
@@ -63,24 +83,7 @@ function getLegalUsers() {
   return users.map(setIsHasAccess).map(convertLegalUserId)
 }
 
-function setIsHasAccess(user) {
-  const foreverAccess = user.expireTime === 0
-  const expireTime = new Date(user.expireTime * 1000).getTime()
-  const nowTime = new Date().getTime()
-  user.hasAccess = foreverAccess || nowTime < expireTime
-  return user
-}
-
-function convertLegalUserId(user) {
-  let id = ''
-  for (let number of user.id) {
-    id += number
-  }
-  user.id = +id
-  return user
-}
-
-function getErrorText(error_code) {
+function getErrorText(errorCode) {
   const errors = {
     1: 'Неизвестная для ВК ошибка. Попробуй позже',
     5:
@@ -98,41 +101,38 @@ function getErrorText(error_code) {
     601: 'Превышено количество запросов за день.\nПопробуй позже',
     603: 'Произошла ошибка при работе с РК',
   }
-  const error_text = errors[error_code]
-  return error_text ? error_text : 'Неизвестная ошибка'
+  const errorText = errors[errorCode]
+  return errorText || 'Неизвестная ошибка'
 }
 
 function vk(options) {
-  let data = options.data || {}
-  data.access_token = access_token
-  data.v = api_version
+  const data = options.data || {}
+  data.access_token = window.access_token
+  data.v = apiVersion
   return new Promise((resolve, reject) => {
     const now = Date.now()
-    const difference = now - request_time
-    if (request_time && difference < 500) setTimeout(request, difference)
-    else request()
-
     function request() {
-      request_time = now
+      requestTime = now
       catta({
         type: 'jsonp',
         timeout: 2,
-        url: api_url + options.method,
-        data: data,
+        url: apiUrl + options.method,
+        data,
       }).then(
         (res) => {
           if (res.response) {
             resolve(res.response)
           } else {
-            const error_code = res.error.error_code
-            const error_message = res.error.error_msg
-            const error_nice_text = getErrorText(error_code)
+            const { error_code: errorCode } = res.error
+            const errorMessage = res.error.error_msg
+            const errorNiceText = getErrorText(errorCode)
             showErrorAlert({
               title: 'Возникла ошибка при работе с ВК',
-              text: error_nice_text,
+              text: errorNiceText,
             })
+            // eslint-disable-next-line no-console
             console.error(res.error)
-            throw new Error(`#${error_code}: ${error_message}`)
+            throw new Error(`#${errorCode}: ${errorMessage}`)
           }
         },
         (err) => {
@@ -141,11 +141,15 @@ function vk(options) {
               'Сетевая ошибка.\n' +
               'Проверь соединие с Интернетом и обнови страницу',
           })
+          // eslint-disable-next-line no-console
           console.log(err)
           reject(err)
         }
       )
     }
+    const difference = now - requestTime
+    if (requestTime && difference < 500) setTimeout(request, difference)
+    else request()
   })
 }
 
@@ -157,33 +161,12 @@ function getUserVkData() {
   )
 }
 
-function showBuyAlert() {
-  const title = 'Упс, эта программа платная'
-  const html =
-    '<p>Опробуй ее бесплатно перед покупкой!</p>' +
-    `<p>Напиши в <a href="${connect_dev_link}">паблик разработчика</a> и получи</p>` +
-    '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>'
-  const ctaText = 'Получить'
-  baseShowLicenseAlert(title, html, ctaText)
-}
-
-function showLicenseExpiredAlert() {
-  const title = 'Упс, тестовый период закончился'
-  const html =
-    '<p>Понравилась программа?</p>' +
-    `<p>Напиши в <a href="${connect_dev_link}">паблик разработчика</a></p>` +
-    '<p>Купи вечную лицензию</p>' +
-    '<p>И пользуйся программой всегда!</p>'
-  const ctaButton = 'Написать'
-  baseShowLicenseAlert(title, html, ctaButton)
-}
-
 function baseShowLicenseAlert(title, html, ctaText) {
-  let text = document.createElement('div')
+  const text = document.createElement('div')
   text.innerHTML = html
   swal({
     icon: 'warning',
-    title: title,
+    title,
     content: {
       element: text,
     },
@@ -194,17 +177,38 @@ function baseShowLicenseAlert(title, html, ctaText) {
       closeModal: false,
     },
   }).then((value) => {
-    if (value) window.location.href = connect_dev_link
+    if (value) window.location.href = connectDevLink
   })
+}
+
+function showBuyAlert() {
+  const title = 'Упс, эта программа платная'
+  const html =
+    '<p>Опробуй ее бесплатно перед покупкой!</p>' +
+    `<p>Напиши в <a href="${connectDevLink}">паблик разработчика</a> и получи</p>` +
+    '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>'
+  const ctaText = 'Получить'
+  baseShowLicenseAlert(title, html, ctaText)
+}
+
+function showLicenseExpiredAlert() {
+  const title = 'Упс, тестовый период закончился'
+  const html =
+    '<p>Понравилась программа?</p>' +
+    `<p>Напиши в <a href="${connectDevLink}">паблик разработчика</a></p>` +
+    '<p>Купи вечную лицензию</p>' +
+    '<p>И пользуйся программой всегда!</p>'
+  const ctaButton = 'Написать'
+  baseShowLicenseAlert(title, html, ctaButton)
 }
 
 function verifyLicense() {
   getUserVkData().then((data) => {
-    const user_vk_id = data.id
-    user = legal_users.find((user) => user.id === user_vk_id) || false
+    const userVkId = data.id
+    user = legalUsers.find((localUser) => localUser.id === userVkId) || false
     if (!user) showBuyAlert()
     else if (!user.hasAccess) showLicenseExpiredAlert()
-    license_checked = true
+    licenceChecked = true
   })
 }
 
@@ -217,15 +221,15 @@ function initCalendars() {
 
 function checkInputs() {
   let error
-  if (!ad_cabinet_id) error = 'Не выбран кабинет.\nВыбери его сверху'
-  else if (!file_content)
+  if (!adCabinetId) error = 'Не выбран кабинет.\nВыбери его сверху'
+  else if (!fileContent)
     error = 'Не выбран файл от Анкет.\nПеретащи или выбери его'
   return error
 }
 
 function getDatesRange() {
-  const selectedDates = calendarInput.selectedDates
-  return selectedDates ? selectedDates : undefined
+  const { selectedDates } = calendarInput
+  return selectedDates || undefined
 }
 
 function onStart() {
@@ -233,7 +237,7 @@ function onStart() {
   const error = checkInputs()
   if (error) showErrorAlert({ text: error })
   else {
-    if (license_checked) {
+    if (licenceChecked) {
       if (!user) showBuyAlert()
       else if (!user.hasAccess) showLicenseExpiredAlert()
     } else verifyLicense()
@@ -256,7 +260,7 @@ function convertCabinetsToOptions(array) {
 }
 
 function addCabinetsToSelect(array, select) {
-  let optionArray = convertCabinetsToOptions(array)
+  const optionArray = convertCabinetsToOptions(array)
   if (optionArray.length === 0)
     optionArray.push({
       name: 'У тебя нет активных рекламных кабинетов :(',
@@ -305,9 +309,11 @@ function loadSelectData() {
   })
 }
 
-function cabinetIsAgency(cabinet_id) {
-  const cabinet_obj = adAccounts.find((acc) => acc.id === parseInt(cabinet_id))
-  return cabinet_obj.type === 'agency'
+function cabinetIsAgency(cabinetId) {
+  const cabinetObj = adAccounts.find(
+    (acc) => acc.id === parseInt(cabinetId, 10)
+  )
+  return cabinetObj.type === 'agency'
 }
 
 function removeUselessAgencyClientStuff(item) {
@@ -324,11 +330,11 @@ function getAgencyClients(accountId) {
 }
 
 function onCabinetSelect(e, select) {
-  ad_cabinet_id = e.params.data.id
-  if (cabinetIsAgency(ad_cabinet_id)) {
+  adCabinetId = e.params.data.id
+  if (cabinetIsAgency(adCabinetId)) {
     select.html('')
     addPlaceholderOption()
-    getAgencyClients(ad_cabinet_id).then((clients) => {
+    getAgencyClients(adCabinetId).then((clients) => {
       select.off('select2:select')
       $('label[for="ad-acc-select"]').html(
         'Выбери клиента агентского кабинета:'
@@ -336,7 +342,10 @@ function onCabinetSelect(e, select) {
       removePlaceholderOption()
       addItemsToSelect(clients, select)
       if (clients.length === 1) agencyClient = clients[0].id
-      else select.on('select2:select', (e) => (agencyClient = e.params.data.id))
+      else
+        select.on('select2:select', (event) => {
+          agencyClient = event.params.data.id
+        })
     })
   }
 }
@@ -353,13 +362,13 @@ function removeShit(str) {
 }
 
 function convertRecord(obj) {
-  let new_obj = {}
-  new_obj.utm_1 = removeShit(obj.utm_1)
-  new_obj.utm_2 = removeShit(obj.utm_2)
-  new_obj.utm_3 = removeShit(obj.utm_3)
-  new_obj.str_utm = new_obj.utm_1 + new_obj.utm_2 + new_obj.utm_3
-  new_obj.count = 1
-  return new_obj
+  const newObj = {}
+  newObj.utm_1 = removeShit(obj.utm_1)
+  newObj.utm_2 = removeShit(obj.utm_2)
+  newObj.utm_3 = removeShit(obj.utm_3)
+  newObj.str_utm = newObj.utm_1 + newObj.utm_2 + newObj.utm_3
+  newObj.count = 1
+  return newObj
 }
 
 function formatDate4VK(dateObj) {
@@ -368,35 +377,39 @@ function formatDate4VK(dateObj) {
 
 function convertDatesRange4VK(dateRange) {
   if (dateRange.length === 0) return [0, 0]
-  else return dateRange.map((date) => formatDate4VK(date))
+  return dateRange.map((date) => formatDate4VK(date))
 }
 
 function getAdsStats(ads) {
   const vkStatsRange = convertDatesRange4VK(statsRange)
   const period = statsRange.length ? 'day' : 'overall'
   const data = {
-    account_id: ad_cabinet_id,
+    account_id: adCabinetId,
     ids_type: 'ad',
     ids: JSON.stringify(ads),
-    period: period,
+    period,
     date_from: vkStatsRange[0],
     date_to: vkStatsRange[1],
   }
   if (agencyClient) data.client_id = agencyClient
   return vk({
     method: 'ads.getStatistics',
-    data: data,
+    data,
   })
 }
 
 function addToData(record) {
   record = convertRecord(record)
-  const found_record = fileData.find((item) => item.str_utm === record.str_utm)
-  found_record ? found_record.count++ : fileData.push(record)
+  const foundRecord = fileData.find((item) => item.str_utm === record.str_utm)
+  if (foundRecord) {
+    foundRecord.count += 1
+  } else {
+    fileData.push(record)
+  }
 }
 
 function parseCsv() {
-  const csv = new CSV(remove_header(file_content), {
+  const csv = new CSV(removeHeader(fileContent), {
     header: true,
     cast: false,
   }).parse()
@@ -404,13 +417,13 @@ function parseCsv() {
 }
 
 function addLoader(elem) {
-  let wrapper = $('<div class="loading"></div>')
-  let loading = $('<div class="sk-circle"></div>')
-  let inner_html = ''
-  for (let i = 1; i <= 12; i++) {
-    inner_html += '<div class="sk-circle' + i.toString() + ' sk-child"></div>'
+  const wrapper = $('<div class="loading"></div>')
+  const loading = $('<div class="sk-circle"></div>')
+  let innerHtml = ''
+  for (let i = 1; i <= 12; i += 1) {
+    innerHtml += `<div class="sk-circle${i.toString()} sk-child"></div>`
   }
-  loading.html(inner_html)
+  loading.html(innerHtml)
   wrapper.html(loading)
   elem.html(wrapper)
 }
@@ -513,19 +526,19 @@ function addSummaryText(ads) {
 }
 
 function getAdsLinks() {
-  let data = {
-    account_id: ad_cabinet_id,
+  const data = {
+    account_id: adCabinetId,
     include_deleted: 0,
   }
   if (agencyClient) data.client_id = agencyClient
   return new Promise((resolve) =>
     vk({
       method: 'ads.getAdsLayout',
-      data: data,
+      data,
     }).then((res) => {
       res = res.map((item) => {
         return {
-          id: parseInt(item.id),
+          id: parseInt(item.id, 10),
           link: item.link_url,
         }
       })
@@ -545,13 +558,13 @@ function appendPostIdToAd(ad) {
 function getAdsPosts(ads) {
   let i = 0
   const step = 100
-  let resultPosts = []
+  const resultPosts = []
   return new Promise((resolve) => {
-    let promises = []
+    const promises = []
     do {
-      let partAds = ads.slice(i, i + step)
+      const partAds = ads.slice(i, i + step)
       let strPosts = partAds.reduce(
-        (accumulator, currentAd) => accumulator + currentAd.postId + ',',
+        (accumulator, currentAd) => `${accumulator + currentAd.postId},`,
         ''
       )
       strPosts = strPosts.slice(0, -1)
@@ -564,7 +577,7 @@ function getAdsPosts(ads) {
       i += step
     } while (i < ads.length)
     Promise.all(promises).then((res) => {
-      for (let promisePosts of res) resultPosts.push(...promisePosts)
+      for (const promisePosts of res) resultPosts.push(...promisePosts)
       resolve(resultPosts)
     })
   })
@@ -581,7 +594,7 @@ function removeUselessPostStuff(post) {
 function getAttachmentsLink(post) {
   let link = false
   if (!post.attachments) return link
-  for (let attachment of post.attachments) {
+  for (const attachment of post.attachments) {
     if (attachment.type === 'link') {
       link = attachment.link.url
       break
@@ -613,6 +626,7 @@ function findAndAppendTargetLink(post) {
   const anketsRe = /vk\.com\/app5619682_-\d+(#\d+(_[A-Za-z0-9_-]*)?)?/
   const vkCcRe = /vk\.cc\/[A-Za-z0-9_-]+/
   const res = [anketsRe, vkCcRe]
+  // eslint-disable-next-line prefer-destructuring
   post.targetLink = execResOnString(res, [post.text, post.link])[0]
   return post
 }
@@ -642,16 +656,16 @@ function removePostText(post) {
 }
 
 function mergeAdsAndPosts(ads, posts) {
-  for (let ad of ads) {
-    ad.id = parseInt(ad.id)
+  for (const ad of ads) {
+    ad.id = parseInt(ad.id, 10)
     let i = 0
-    for (let post of posts) {
+    for (const post of posts) {
       if (ad.postId === post.id) {
         ad.anketsLink = post.targetLink
         posts.splice(i, 1)
         break
       }
-      i++
+      i += 1
     }
     if (!posts.length) break
   }
@@ -672,10 +686,11 @@ function parseUtms(ad) {
     const [anketId, ...utms] = ad.anketsLink.split('_', 4)
     ad.anketId = anketId
     ad.utms = utms
-    ad.anketId = parseInt(ad.anketId)
+    ad.anketId = parseInt(ad.anketId, 10)
+    // eslint-disable-next-line prefer-destructuring
     if (ad.utms && ad.utms[0]) ad.utms[0] = ad.utms[0]
     ad.str_utm = ''
-    if (ad.utms.length) for (let utm of ad.utms) ad.str_utm += utm
+    if (ad.utms.length) for (const utm of ad.utms) ad.str_utm += utm
   }
   ad.anketsLink = undefined
   return ad
@@ -701,17 +716,17 @@ function isPromotedPost(ad) {
 
 function showManyAnketsIdsAlert(...anketIds) {
   $(document).on('click', '.inputGroup > input', onAnketIdRadioClicked)
-  let form = $('<form class="form"></form>')
-  for (let id of anketIds) {
-    let inputGroup = $('<div class="inputGroup"></div>')
+  const form = $('<form class="form"></form>')
+  for (const id of anketIds) {
+    const inputGroup = $('<div class="inputGroup"></div>')
     const radioId = `radio${id}`
-    let input = $(`<input>`, {
+    const input = $(`<input>`, {
       type: 'radio',
       name: 'anketId',
       value: id,
       id: radioId,
     })
-    let label = $(`<label for="${radioId}" class="ankets">${id}</label>`)
+    const label = $(`<label for="${radioId}" class="ankets">${id}</label>`)
     inputGroup.append(input, label)
     form.append(inputGroup)
   }
@@ -724,8 +739,7 @@ function showManyAnketsIdsAlert(...anketIds) {
     .first()
     .val()
   return swal({
-    title:
-      'В кабинете несколько Анкет.\n' + 'С какой из них я должен работать?',
+    title: 'В кабинете несколько Анкет.\nС какой из них я должен работать?',
     icon: 'info',
     content: form[0],
     button: {
@@ -748,19 +762,19 @@ function isAnketIdEqualsTo(ad, id) {
 }
 
 function getIds(ads) {
-  let ids = new Set()
-  for (let ad of ads) {
+  const ids = new Set()
+  for (const ad of ads) {
     ids.add(ad.id)
   }
   return [...ids]
 }
 
-function addSpentsToAds(ads, vk_stats) {
-  for (let ad of ads) {
+function addSpentsToAds(ads, vkStats) {
+  for (const ad of ads) {
     ad.spent = 0.0
-    for (let ad_stats of vk_stats) {
-      if (ad.id === ad_stats.id) {
-        for (let period of ad_stats.stats) {
+    for (const adStats of vkStats) {
+      if (ad.id === adStats.id) {
+        for (const period of adStats.stats) {
           ad.spent += parseFloat(period.spent || 0)
         }
       }
@@ -775,22 +789,22 @@ function convertRecordToAd(record) {
   return {
     spent: 0.0,
     str_utm: record.str_utm,
-    utms: utms,
+    utms,
     leads: record.count,
   }
 }
 
-function addLeadsToAds(ads, fileData) {
-  for (let ad of ads) {
+function addLeadsToAds(ads, localFileData) {
+  for (const ad of ads) {
     ad.leads = 0
-    for (let record of fileData) {
+    for (const record of localFileData) {
       if (ad.str_utm === record.str_utm) {
         ad.leads += record.count
         record.addedToAds = true
       }
     }
   }
-  for (let record of fileData) {
+  for (const record of localFileData) {
     if (!record.addedToAds) {
       ads.push(convertRecordToAd(record))
     }
@@ -831,21 +845,19 @@ function convetUtmsArrayToFields(ad) {
 }
 
 function mergeDuplicates(ads) {
-  let newAds = []
-  let i = 0
-  for (let ad of ads) {
+  const newAds = []
+  for (const ad of ads) {
     const alreadyExistingItem = newAds.find(
       (item) => ad.str_utm === item.str_utm
     )
     if (!alreadyExistingItem) newAds.push(ad)
     else alreadyExistingItem.spent += ad.spent
-    i++
   }
   return newAds
 }
 
 function containsVkCcLink(posts) {
-  let links = []
+  const links = []
   for (const post of posts) {
     links.push(post.targetLink)
   }
@@ -910,11 +922,11 @@ function work() {
             .filter(adIncludesAnketsLink)
             .map(parseUtms)
             .filter(adHasAnketId)
-          let anketIds = new Set(ads.map(getAnketId))
+          const anketIds = new Set(ads.map(getAnketId))
           if (anketIds.size > 1) {
             return new Promise((resolve) =>
               showManyAnketsIdsAlert(...anketIds).then((id) => {
-                id = parseInt(id)
+                id = parseInt(id, 10)
                 ads = ads.filter((ad) => isAnketIdEqualsTo(ad, id))
                 resolve(ads)
               })
@@ -922,8 +934,8 @@ function work() {
           }
           return Promise.resolve(ads)
         })
-        .then((ads) => {
-          const ids = getIds(ads)
+        .then((localAds) => {
+          const ids = getIds(localAds)
           if (!ids.length) {
             showErrorAlert({
               text: 'Нет объявлений с ссылкой на Анкеты',
@@ -945,27 +957,30 @@ function work() {
           initTable(ads)
         })
     })
+    // eslint-disable-next-line no-console
     .catch((err) => console.error(err))
 }
 
-function remove_header(text) {
+function removeHeader(text) {
   return text.split('\n\n')[1]
 }
 
 function readFile(file) {
   const reader = new FileReader()
-  reader.onload = (e) => (file_content = e.target.result)
+  reader.onload = (e) => {
+    fileContent = e.target.result
+  }
   reader.readAsText(file, 'cp1251')
 }
 
-function check_file(file) {
+function checkFile(file) {
   return !file.name.endsWith('.csv')
     ? 'Неверный файл!\nУ него расширение не .csv'
     : ''
 }
 
-function safe_check_file(file) {
-  const error = check_file(file)
+function safeCheckFile(file) {
+  const error = checkFile(file)
   if (error) {
     showErrorAlert({ text: error })
     throw new Error(error)
@@ -973,18 +988,18 @@ function safe_check_file(file) {
   return file
 }
 
-const dropzone_hover_class = 'hover'
-const dropzone_dropped_class = 'dropped'
+const dropzoneHoverClass = 'hover'
+const dropzoneDroppedClass = 'dropped'
 
 function removeDroppedClass($elem) {
-  $elem.removeClass(dropzone_dropped_class)
+  $elem.removeClass(dropzoneDroppedClass)
 }
 
 function handleFileAndClasses($elem) {
-  $elem.addClass(dropzone_dropped_class)
+  $elem.addClass(dropzoneDroppedClass)
   let file
   try {
-    file = safe_check_file($('input.file-input')[0].files[0])
+    file = safeCheckFile($('input.file-input')[0].files[0])
   } catch (e) {
     removeDroppedClass($elem)
     throw e
@@ -994,7 +1009,7 @@ function handleFileAndClasses($elem) {
 
 function onFileInputChange() {
   const $elem = $('#dropzone')
-  $elem.removeClass(dropzone_hover_class)
+  $elem.removeClass(dropzoneHoverClass)
   if (!this.files[0]) {
     removeDroppedClass($elem)
   } else {
@@ -1005,10 +1020,10 @@ function onFileInputChange() {
 function initDropzone() {
   const dropzone = document.getElementById('dropzone')
   dropzone.addEventListener('dragenter', () =>
-    dropzone.classList.add(dropzone_hover_class)
+    dropzone.classList.add(dropzoneHoverClass)
   )
   dropzone.addEventListener('dragleave', () =>
-    dropzone.classList.remove(dropzone_hover_class)
+    dropzone.classList.remove(dropzoneHoverClass)
   )
   $('input.file-input')[0].addEventListener('change', onFileInputChange)
 }
