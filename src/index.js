@@ -114,7 +114,6 @@ function vk(options) {
 
         function request() {
             request_time = now
-            // noinspection JSUnresolvedFunction
             catta({
                 type: 'jsonp',
                 timeout: 2,
@@ -293,7 +292,6 @@ function removePlaceholderOption() {
 }
 
 function addPlaceholderOption() {
-    // noinspection XmlDefaultAttributeValue
     $('select#ad-acc-select').html(
         '<option id="placeholder" value="0" disabled="disabled">Загружаю клиентов кабинета</option>'
     )
@@ -352,7 +350,6 @@ function onCabinetSelect(e, select) {
 
 function initSelect() {
     const select = $('select#ad-acc-select')
-    // noinspection JSUnresolvedFunction
     select.select2({placeholder: 'Выбрать', language: 'ru'})
     loadSelectData()
     select.on('select2:select', (e) => onCabinetSelect(e, select))
@@ -408,7 +405,6 @@ function addToData(record) {
 }
 
 function parseCsv() {
-    // noinspection JSUnresolvedFunction
     const csv = new CSV(remove_header(file_content), {
         header: true,
         cast: false
@@ -431,7 +427,6 @@ function addLoader(elem) {
 
 function showLoader() {
     const main = $('main')
-    // noinspection JSValidateTypes
     main.children().fadeOut(400, () => {
         main.empty()
         addLoader(main)
@@ -441,7 +436,6 @@ function showLoader() {
 function removeLoader() {
     return new Promise((resolve) => {
         const main = $('main')
-        // noinspection JSValidateTypes
         main.children().fadeOut(600, () => {
             main.empty()
             resolve()
@@ -662,7 +656,6 @@ function removePostText(post) {
 
 function mergeAdsAndPosts(ads, posts) {
     for (let ad of ads) {
-        // noinspection JSCheckFunctionSignatures
         ad.id = parseInt(ad.id)
         let i = 0
         for (let post of posts) {
@@ -690,7 +683,6 @@ function parseUtms(ad) {
     if (ad.anketsLink.includes('#')) {
         ad.anketsLink = sliceFromIndexOf(ad.anketsLink, '#')
         const [anketId, ...utms] = ad.anketsLink.split('_', 4)
-        // noinspection JSCheckFunctionSignatures
         ad.anketId = anketId
         ad.utms = utms
         ad.anketId = parseInt(ad.anketId)
@@ -721,7 +713,6 @@ function isPromotedPost(ad) {
 }
 
 function showManyAnketsIdsAlert(...anketIds) {
-    // noinspection JSCheckFunctionSignatures
     $(document).on('click', '.inputGroup > input', onAnketIdRadioClicked)
     let form = $('<form class="form"></form>')
     for (let id of anketIds) {
@@ -1040,5 +1031,4 @@ function initDropzone() {
     $('input.file-input')[0].addEventListener('change', onFileInputChange)
 }
 
-// noinspection JSCheckFunctionSignatures
 $(document).ready(onLoad)
