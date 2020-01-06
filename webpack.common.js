@@ -1,9 +1,11 @@
 const path = require('path')
 
-const config = {
+module.exports = {
   entry: './src/index.js',
+  resolve: {
+    extensions: ['.js'],
+  },
   output: {
-    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
   },
   module: {
@@ -13,17 +15,14 @@ const config = {
         exclude: /node_modules/,
         loader: 'babel-loader',
       },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.(png|jpg|gif|svg|eot|woff|woff2|ttf|mp3)$/,
+        use: 'file-loader',
+      },
     ],
   },
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-    },
-  },
-}
-
-module.exports = (env) => {
-  if (env.mode === 'development') config.devtool = 'eval-source-map'
-  config.mode = env.mode
-  return config
 }

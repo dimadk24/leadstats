@@ -3,10 +3,17 @@ import CSV from 'comma-separated-values/csv'
 import catta from 'catta'
 import swal from 'sweetalert'
 import flatpickr from 'flatpickr'
+import 'flatpickr/dist/flatpickr.min.css'
 import { Russian } from 'flatpickr/dist/l10n/ru'
 import $ from 'jquery'
 import 'select2'
+import 'select2/dist/css/select2.min.css'
 import 'datatables.net-dt'
+import 'datatables.net-dt/css/jquery.dataTables.min.css'
+import './settings'
+import './style.css'
+import './radioGroup.css'
+import './spinner.css'
 
 flatpickr.localize(Russian)
 

@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack --env.mode=production",
-    "watch": "webpack --watch --env.mode=development",
+    "build": "webpack --config webpack.prod.js",
+    "start": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint \"./src/*.js\" --max-warnings=0"
   },
   "repository": {
@@ -20,16 +20,24 @@
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
     "babel-preset-env": "^1.7.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^3.4.1",
+    "error-overlay-webpack-plugin": "^0.4.1",
     "eslint": "^6.8.0",
     "eslint-config-airbnb": "^17.1.1",
     "eslint-config-prettier": "^6.0.0",
-    "eslint-plugin-prettier": "^3.1.0",
     "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-prettier": "^3.1.0",
+    "file-loader": "^5.0.2",
     "gulp": "^3.9.1",
     "gulp-zip": "^4.2.0",
+    "html-webpack-plugin": "^3.2.0",
     "prettier": "1.13.7",
+    "style-loader": "^1.1.2",
     "webpack": "^4.16.3",
-    "webpack-cli": "^3.1.0"
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.10.1",
+    "webpack-merge": "^4.2.2"
   },
   "dependencies": {
     "catta": "2.1.1",
