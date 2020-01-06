@@ -14,6 +14,7 @@ import './settings'
 import './style.css'
 import './radioGroup.css'
 import './spinner.css'
+import initMessages from './production-utils'
 
 flatpickr.localize(Russian)
 
@@ -29,10 +30,11 @@ const legalUsers = getLegalUsers()
 const connectDevLink = 'https://vk.me/smm_automation'
 let adAccounts = []
 let agencyClient
-
+const isProduction = process.env.NODE_ENV === 'production'
 let statsRange
-
 let calendarInput
+
+if (isProduction) initMessages()
 
 function setIsHasAccess(localUser) {
   const foreverAccess = localUser.expireTime === 0
