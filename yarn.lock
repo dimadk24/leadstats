@@ -1157,10 +1157,10 @@ caniuse-lite@^1.0.30000844:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001019.tgz#857e3fccaad2b2feb3f1f6d8a8f62d747ea648e1"
   integrity sha512-6ljkLtF1KM5fQ+5ZN0wuyVvvebJxgJPTmScOMaFuQN2QuOzvRJnWSKfzQskQU5IOU4Gap3zasYPIinzwUjoj/g==
 
-catta@^2.1.1:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/catta/-/catta-2.2.0.tgz#98f363321e5e0404e4fd9621773c708f9d971d48"
-  integrity sha512-lPAVz565sUCJh+vYADd2DPws1MIGQ3aSRiefgGGv4EDqUzJgkkg1SuzfrZxUwcSaiyIzM+3IEj/R1aNdK+SPjg==
+catta@2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/catta/-/catta-2.1.1.tgz#e79415557442d8838a15b436bb75cf25c42b8dd9"
+  integrity sha512-JFRWCy3G+FRc6Lcq08Pil7T3ffJa3c4nLvbJoK2ZMXoJ5yFdIgV4NBRccP1dhZ0VN6BFCxvgGYVi6YJ43fRPbA==
 
 chalk@2.4.2, chalk@^2.0.0, chalk@^2.1.0, chalk@^2.4.2:
   version "2.4.2"
