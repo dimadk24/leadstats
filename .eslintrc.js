@@ -28,6 +28,7 @@ module.exports = {
     'prefer-destructuring': 'off',
     'jest-formatting/padding-around-expect-groups': 'off',
     'import/order': 'off',
+    'import/prefer-default-export': 'off',
     'prettier/prettier': 'warn',
     //  we allow 0 warnings, so don't think prettier rules are ignored
     // this is only to show prettier issues as warnings, not errors
