@@ -22,6 +22,7 @@ module.exports = {
         ignorePattern: '^(import|\\} from )',
         ignoreStrings: true,
         ignoreTemplateLiterals: true,
+        ignoreRegExpLiterals: true
       },
     ],
     'prefer-destructuring': 'off',
