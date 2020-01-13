@@ -9,23 +9,31 @@ import 'select2'
 import 'select2/dist/css/select2.min.css'
 import 'datatables.net-dt'
 import 'datatables.net-dt/css/jquery.dataTables.min.css'
-import './settings'
 import './style.css'
 import './radioGroup.css'
 import './spinner.css'
 import initMessages from './production-utils'
-import { getUserVkData, vk } from './vk-utils'
+import { vk } from './vk-utils'
 import { showErrorAlert } from './utils'
+import {
+  hasAccess as getHasAccess,
+  setPayedUsersLicenseEndTime,
+} from './license-utils'
 
 flatpickr.localize(Russian)
 
 let adCabinetId = 0
 let fileContent = ''
 const fileData = []
-let licenceChecked = false
-let user
-const legalUsers = getLegalUsers()
-const connectDevLink = 'https://vk.me/smm_automation'
+let hasAccess
+let trialFinished
+let payedPeriodFinished
+let licenseData = {
+  hasAccess: false,
+  trialFinished: false,
+  payedPeriodFinished: false,
+  licenseChecked: false,
+}
 let adAccounts = []
 let agencyClient
 const isProduction = process.env.NODE_ENV === 'production'
@@ -33,88 +41,6 @@ let statsRange
 let calendarInput
 
 if (isProduction) initMessages()
-
-function setIsHasAccess(localUser) {
-  const foreverAccess = localUser.expireTime === 0
-  const expireTime = new Date(localUser.expireTime * 1000).getTime()
-  const nowTime = new Date().getTime()
-  localUser.hasAccess = foreverAccess || nowTime < expireTime
-  return localUser
-}
-
-function convertLegalUserId(localUser) {
-  let id = ''
-  for (const number of localUser.id) {
-    id += number
-  }
-  localUser.id = +id
-  return localUser
-}
-
-function getLegalUsers() {
-  const users = [
-    {
-      id: ['1', '5', '9', '2', '0', '4', '0', '9', '8'],
-      expireTime: 0,
-    },
-    {
-      id: ['8', '3', '8', '1', '4', '3', '7', '5'],
-      expireTime: 0,
-    },
-  ]
-  return users.map(setIsHasAccess).map(convertLegalUserId)
-}
-
-function baseShowLicenseAlert(title, html, ctaText) {
-  const text = document.createElement('div')
-  text.innerHTML = html
-  swal({
-    icon: 'warning',
-    title,
-    content: {
-      element: text,
-    },
-    button: {
-      text: ctaText,
-      value: true,
-      className: 'cta-button',
-      closeModal: false,
-    },
-  }).then((value) => {
-    if (value) window.location.href = connectDevLink
-  })
-}
-
-function showBuyAlert() {
-  const title = 'Упс, эта программа платная'
-  const html =
-    '<p>Опробуй ее бесплатно перед покупкой!</p>' +
-    `<p>Напиши в <a href="${connectDevLink}">паблик разработчика</a> и получи</p>` +
-    '<p><span class="free-trial">Бесплатный тестовый доступ</span></p>'
-  const ctaText = 'Получить'
-  baseShowLicenseAlert(title, html, ctaText)
-}
-
-function showLicenseExpiredAlert() {
-  const title = 'Упс, тестовый период закончился'
-  const html =
-    '<p>Понравилась программа?</p>' +
-    `<p>Напиши в <a href="${connectDevLink}">паблик разработчика</a></p>` +
-    '<p>Купи вечную лицензию</p>' +
-    '<p>И пользуйся программой всегда!</p>'
-  const ctaButton = 'Написать'
-  baseShowLicenseAlert(title, html, ctaButton)
-}
-
-function verifyLicense() {
-  getUserVkData().then((data) => {
-    const userVkId = data.id
-    user = legalUsers.find((localUser) => localUser.id === userVkId) || false
-    if (!user) showBuyAlert()
-    else if (!user.hasAccess) showLicenseExpiredAlert()
-    licenceChecked = true
-  })
-}
 
 function initCalendars() {
   calendarInput = flatpickr('#calendar-input', {
@@ -141,16 +67,29 @@ function onStart() {
   const error = checkInputs()
   if (error) showErrorAlert({ text: error })
   else {
-    if (licenceChecked) {
-      if (!user) showBuyAlert()
-      else if (!user.hasAccess) showLicenseExpiredAlert()
-    } else verifyLicense()
-    if (user && user.hasAccess) work()
+    if (licenseData.checked) {
+      if (!hasAccess && trialFinished) showTrialIsOverAlert()
+      else if (!hasAccess && payedPeriodFinished) showPayedPeriodIsOverAlert()
+    } else getHasAccess()
+    if (hasAccess) work()
   }
 }
 
-function onLoad() {
-  verifyLicense()
+function tryToSetAccessTokenFromUrl() {
+  const { hash } = window.location
+  if (!hash) return
+  const vkTokenHashRegex = /^#access_token=([0-9a-f]*)&expires_in=0&user_id=\d*$/
+  const match = hash.match(vkTokenHashRegex)
+  if (!match) return
+  const accessToken = match[1]
+  localStorage.setItem('accessToken', accessToken)
+}
+
+async function onLoad() {
+  tryToSetAccessTokenFromUrl()
+  await setPayedUsersLicenseEndTime()
+  licenseData = await getHasAccess()
+  licenseData.checked = true
   initSelect()
   initDropzone()
   initCalendars()
