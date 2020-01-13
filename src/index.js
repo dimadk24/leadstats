@@ -980,10 +980,14 @@ function removeDroppedClass($elem) {
 }
 
 function handleFileAndClasses($elem) {
-  $elem.addClass(dropzoneDroppedClass)
   let file
   try {
-    file = safeCheckFile($('input.file-input')[0].files[0])
+    file = $('input.file-input')[0].files[0]
+    file = safeCheckFile(file)
+    $elem.addClass(dropzoneDroppedClass)
+    const textElements = $elem.children('p.inner-text')
+    $(textElements[0]).text(`Файл ${file.name} успешно загружен`)
+    $(textElements[1]).text('Беру данные из него')
   } catch (e) {
     removeDroppedClass($elem)
     throw e

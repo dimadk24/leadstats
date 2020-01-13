@@ -47,16 +47,16 @@ label {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
-    transition-duration: 150ms;
+    transition-duration: 250ms;
     position: relative;
 }
 
 .dropzone.hover {
-    background-color: white;
+    background-color: #bdeec2;
 }
 
 .dropzone.dropped {
-    background-color: lightgreen;
+    background-color: #6aee6c;
 }
 
 input.file-input {
