@@ -24,6 +24,7 @@ module.exports = {
         ignoreTemplateLiterals: true,
       },
     ],
+    'prefer-destructuring': 'off',
     'jest-formatting/padding-around-expect-groups': 'off',
     'import/order': 'off',
     'prettier/prettier': 'warn',
