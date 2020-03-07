@@ -14,6 +14,8 @@ const config = merge(commonConfig, {
       error: true,
       warning: true,
     },
+    contentBase: [__dirname],
+    watchContentBase: true,
     hot: true,
   },
   plugins: [
