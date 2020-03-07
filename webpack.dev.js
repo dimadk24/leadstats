@@ -9,6 +9,7 @@ const config = merge(commonConfig, {
   mode: 'development',
   devtool: 'cheap-module-source-map',
   devServer: {
+    host: '0.0.0.0',
     overlay: {
       error: true,
       warning: true,
