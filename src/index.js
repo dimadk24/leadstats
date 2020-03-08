@@ -85,7 +85,6 @@ async function onLoad() {
   tryToSetAccessTokenFromUrl()
   await setPayedUsersLicenseEndTime()
   licenseData = await getHasAccess()
-  licenseData.checked = true
   initSelect()
   initDropzone()
   initCalendars()
