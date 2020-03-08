@@ -32,7 +32,6 @@ let licenseData = {
   hasAccess: false,
   trialFinished: false,
   payedPeriodFinished: false,
-  licenseChecked: false,
 }
 let adAccounts = []
 let agencyClient
@@ -67,10 +66,8 @@ function onStart() {
   const error = checkInputs()
   if (error) showErrorAlert({ text: error })
   else {
-    if (licenseData.checked) {
-      if (!hasAccess && trialFinished) showTrialIsOverAlert()
-      else if (!hasAccess && payedPeriodFinished) showPayedPeriodIsOverAlert()
-    } else getHasAccess()
+    if (!hasAccess && trialFinished) showTrialIsOverAlert()
+    else if (!hasAccess && payedPeriodFinished) showPayedPeriodIsOverAlert()
     if (hasAccess) work()
   }
 }
