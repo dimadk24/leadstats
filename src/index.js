@@ -14,7 +14,7 @@ import './radioGroup.css'
 import './spinner.css'
 import initMessages from './production-utils'
 import { vk } from './vk-utils'
-import { showErrorAlert } from './utils'
+import { showErrorAlert } from './swal-utils'
 import {
   hasAccess as getHasAccess,
   setPayedUsersLicenseEndTime,

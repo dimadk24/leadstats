@@ -1,5 +1,5 @@
 import catta from 'catta'
-import { showErrorAlert } from './utils'
+import { showErrorAlert } from './swal-utils'
 
 let requestTime = 0
 const apiUrl = 'https://api.vk.com/method/'
