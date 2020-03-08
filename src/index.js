@@ -25,9 +25,6 @@ flatpickr.localize(Russian)
 let adCabinetId = 0
 let fileContent = ''
 const fileData = []
-let hasAccess
-let trialFinished
-let payedPeriodFinished
 let licenseData = {
   hasAccess: false,
   trialFinished: false,
@@ -65,10 +62,12 @@ function onStart() {
   statsRange = getDatesRange()
   const error = checkInputs()
   if (error) showErrorAlert({ text: error })
-  else {
-    if (!hasAccess && trialFinished) showTrialIsOverAlert()
-    else if (!hasAccess && payedPeriodFinished) showPayedPeriodIsOverAlert()
-    if (hasAccess) work()
+  else if (licenseData.hasAccess) {
+    work()
+  } else if (licenseData.trialFinished) {
+    showTrialIsOverAlert()
+  } else if (licenseData.payedPeriodFinished) {
+    showPayedPeriodIsOverAlert()
   }
 }
 
