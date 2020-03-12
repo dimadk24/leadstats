@@ -90,7 +90,12 @@ div.swal-content, div.swal-text {
 }
 
 .cta-button {
-    background-color: #dc1212;
+    background-color: #5d5de3;
+}
+
+.cta-button:not([disabled]):hover,
+.cta-button:not([disabled]):active {
+    background-color: #0d37fa;
 }
 
 div.swal-content > div > p {
