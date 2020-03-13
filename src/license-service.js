@@ -3,6 +3,8 @@ import { getUserVkData } from './vk-utils'
 import { Utils } from './utils'
 import { SwalUtils } from './swal-utils'
 
+const APP_ID = 7272754
+
 const payedUsers = [
   {
     id: 159204098,
@@ -79,9 +81,8 @@ export class LicenseService {
     doubleTry = true,
     showCancel = false
   ) {
-    const appId = 7282612
     const redirectUri = window.location.href
-    const authUrl = `https://oauth.vk.com/authorize?client_id=${appId}&redirect_uri=${redirectUri}&display=page&scope=ads,offline&response_type=token&v=5.80`
+    const authUrl = `https://oauth.vk.com/authorize?client_id=${APP_ID}&redirect_uri=${redirectUri}&display=page&scope=ads,offline&response_type=token&v=5.80`
     const buttons = {
       cancel: showCancel && {
         visible: true,
