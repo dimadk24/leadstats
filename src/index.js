@@ -12,13 +12,10 @@ import 'datatables.net-dt/css/jquery.dataTables.min.css'
 import './style.css'
 import './radioGroup.css'
 import './spinner.css'
-import initMessages from './production-utils'
+import { VkMessagesService } from './vk-messages-service'
 import { vk } from './vk-utils'
-import { showErrorAlert } from './swal-utils'
-import {
-  hasAccess as getHasAccess,
-  setPayedUsersLicenseEndTime,
-} from './license-utils'
+import { SwalUtils } from './swal-utils'
+import { LicenseService } from './license-service'
 
 flatpickr.localize(Russian)
 
@@ -28,15 +25,13 @@ const fileData = []
 let licenseData = {
   hasAccess: false,
   trialFinished: false,
-  payedPeriodFinished: false,
 }
 let adAccounts = []
 let agencyClient
-const isProduction = process.env.NODE_ENV === 'production'
 let statsRange
 let calendarInput
 
-if (isProduction) initMessages()
+VkMessagesService.initMessages()
 
 function initCalendars() {
   calendarInput = flatpickr('#calendar-input', {
@@ -58,33 +53,22 @@ function getDatesRange() {
   return selectedDates || undefined
 }
 
-function onStart() {
+async function onStart() {
   statsRange = getDatesRange()
   const error = checkInputs()
-  if (error) showErrorAlert({ text: error })
+  if (error) await SwalUtils.showErrorAlert({ text: error })
   else if (licenseData.hasAccess) {
     work()
-  } else if (licenseData.trialFinished) {
-    showTrialIsOverAlert()
-  } else if (licenseData.payedPeriodFinished) {
-    showPayedPeriodIsOverAlert()
+  } else if (!licenseData.trialFinished) {
+    const startedTrial = await LicenseService.showStartTrialAlert()
+    if (startedTrial) work()
+  } else {
+    await LicenseService.showTrialFinishedAlert()
   }
 }
 
-function tryToSetAccessTokenFromUrl() {
-  const { hash } = window.location
-  if (!hash) return
-  const vkTokenHashRegex = /^#access_token=([0-9a-f]*)&expires_in=0&user_id=\d*$/
-  const match = hash.match(vkTokenHashRegex)
-  if (!match) return
-  const accessToken = match[1]
-  localStorage.setItem('accessToken', accessToken)
-}
-
 async function onLoad() {
-  tryToSetAccessTokenFromUrl()
-  await setPayedUsersLicenseEndTime()
-  licenseData = await getHasAccess()
+  licenseData = await LicenseService.initUserState()
   initSelect()
   initDropzone()
   initCalendars()
@@ -768,7 +752,7 @@ function work() {
         .then((localAds) => {
           const ids = getIds(localAds)
           if (!ids.length) {
-            showErrorAlert({
+            SwalUtils.showErrorAlert({
               text: 'Нет объявлений с ссылкой на Анкеты',
             }).then(() => removeLoader())
             throw new Error('No ads')
@@ -813,7 +797,7 @@ function checkFile(file) {
 function safeCheckFile(file) {
   const error = checkFile(file)
   if (error) {
-    showErrorAlert({ text: error })
+    SwalUtils.showErrorAlert({ text: error })
     throw new Error(error)
   }
   return file

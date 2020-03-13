@@ -1,0 +1,28 @@
+div.swal-content,
+div.swal-text {
+  font-size: large;
+}
+
+div.swal-content > div > p {
+  margin-bottom: 3px;
+}
+
+.cta-button {
+  background-color: #5d5de3;
+}
+
+.cta-button:not([disabled]):hover,
+.cta-button:not([disabled]):active {
+  background-color: #0d37fa;
+}
+
+.swal-content a,
+.swal-content a:visited {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.swal-content a:hover,
+.swal-content a:active {
+  text-decoration: underline;
+}

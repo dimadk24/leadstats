@@ -1,6 +1,6 @@
 import catta from 'catta'
 import swal from 'sweetalert'
-import { showErrorAlert } from './swal-utils'
+import { SwalUtils } from './swal-utils'
 
 let requestTime = 0
 const apiUrl = 'https://api.vk.com/method/'
@@ -55,7 +55,7 @@ function vk(options) {
             const { error_code: errorCode } = res.error
             const errorMessage = res.error.error_msg
             const errorNiceText = getNiceErrorText(errorCode, errorMessage)
-            showErrorAlert({
+            SwalUtils.showErrorAlert({
               title: 'Возникла ошибка при работе с ВК',
               text: errorNiceText,
             })
@@ -77,7 +77,7 @@ function vk(options) {
               vk(options).then(resolve, reject)
             })
           } else {
-            showErrorAlert({
+            SwalUtils.showErrorAlert({
               text:
                 'Сетевая ошибка.\n' +
                 'Проверь соединие с Интернетом и попробуй еще раз',

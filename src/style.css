@@ -81,28 +81,6 @@ input.file-input {
   height: 50px;
 }
 
-div.swal-content,
-div.swal-text {
-  font-size: large;
-}
-
-.free-trial {
-  font-weight: bold;
-}
-
-.cta-button {
-  background-color: #5d5de3;
-}
-
-.cta-button:not([disabled]):hover,
-.cta-button:not([disabled]):active {
-  background-color: #0d37fa;
-}
-
-div.swal-content > div > p {
-  margin-bottom: 3px;
-}
-
 input#calendar-input {
   padding: 5px 7px;
   border-radius: 6px;
